@@ -485,6 +485,7 @@ button:active {
 
 .ai-settings select {
   width: 100%;
+  max-width: 100%;
   font-family: inherit;
 }
 
@@ -494,6 +495,10 @@ button:active {
 
 .ai-settings .buttons {
   margin-top: 12px;
+}
+
+.ai-settings .link {
+  margin: 8px 0 0;
 }
 
 /* ---------- Your map ---------- */

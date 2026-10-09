@@ -8,7 +8,7 @@
 // The text the learner SEES is Spanish (with small English hints): that's content, not code.
 
 // ---------- 1. Settings (change these numbers whenever you like) ----------
-const VERSION = "1.8";                      // change it every time you publish
+const VERSION = "1.9";                      // change it every time you publish
 const NEW_PER_DAY = 15;                     // new cards per day (when the profile doesn't say)
 const BOX_DAYS = [0, 0, 1, 3, 7, 14];       // days before a card comes back, by box (1–5)
 const NEW_PER_MINUTES = { 5: 5, 15: 10, 30: 15, 60: 20 };   // minutes per day (profile) → new cards per day
@@ -1595,40 +1595,142 @@ $("#talk-new").addEventListener("click", () => {
   drawTalk();
 });
 
-// ---- [ progreso ] → "la IA de Profe": choose a provider, paste your key ----
+// ---- [ progreso ] → "la IA de Profe": choose a provider, paste your key, pick a model ----
+// Nobody has to know model names: after you paste a key, the app asks the provider
+// "which models can this key use?" and shows them as a list.
 const aiProvider = $("#ai-provider");
 const aiKey = $("#ai-key");
-const aiModel = $("#ai-model");
+const aiModel = $("#ai-model");             // the list of models
+const aiModelOther = $("#ai-model-other");  // "✎ otro": type a model name by hand
 const aiUrl = $("#ai-url");
 const aiStatus = $("#ai-status");
+const OTHER_MODEL = "other";
 
 for (const id in AI_PROVIDERS) aiProvider.append(new Option(AI_PROVIDERS[id].name, id));
 
+// Ask the provider for its models. Returns [{ id, name, free }]
+async function listModels(provider, key, url) {
+  const get = async (address, headers) => {
+    let response;
+    try {
+      response = await fetch(address, { headers });
+    } catch (error) {
+      throw new Error("sin conexión (¿internet?)");
+    }
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const detail = (data.error && (data.error.message || data.error)) || response.statusText;
+      if (response.status === 400 || response.status === 401 || response.status === 403) throw new Error(`la clave no funciona (${detail})`);
+      throw new Error(`error ${response.status}: ${detail}`);
+    }
+    return data;
+  };
+
+  if (provider === "anthropic") {
+    const data = await get("https://api.anthropic.com/v1/models?limit=100", {
+      "x-api-key": key,
+      "anthropic-version": "2023-06-01",
+      "anthropic-dangerous-direct-browser-access": "true",
+    });
+    return data.data.map(m => ({ id: m.id, name: m.display_name || m.id }));
+  }
+  if (provider === "gemini") {
+    const data = await get("https://generativelanguage.googleapis.com/v1beta/models?pageSize=1000", { "x-goog-api-key": key });
+    return (data.models || [])
+      .filter(m => (m.supportedGenerationMethods || []).includes("generateContent"))   // models that can chat
+      .filter(m => !/embedding|aqa|imagen|veo|tts|image/i.test(m.name))               // not pictures, video or voice
+      .map(m => ({ id: m.name.replace(/^models\//, ""), name: m.displayName || m.name }));
+  }
+  if (provider === "openrouter") {
+    const data = await get("https://openrouter.ai/api/v1/models", { authorization: `Bearer ${key}` });
+    return data.data
+      .filter(m => !m.architecture || !m.architecture.output_modalities || m.architecture.output_modalities.includes("text"))
+      .map(m => ({ id: m.id, name: m.name || m.id, free: m.id.endsWith(":free") || (m.pricing && Number(m.pricing.prompt) === 0 && Number(m.pricing.completion) === 0) }))
+      .sort((a, b) => (b.free - a.free) || a.name.localeCompare(b.name));   // free ones first
+  }
+  // openai + custom: the OpenAI format
+  const data = await get((url || AI_PROVIDERS[provider].url).replace(/\/+$/, "") + "/models", { authorization: `Bearer ${key}` });
+  return (data.data || [])
+    .filter(m => !/embedding|whisper|tts|dall-e|moderation|transcribe|image|audio|realtime|search/i.test(m.id))
+    .map(m => ({ id: m.id, name: m.id }))
+    .sort((a, b) => a.id.localeCompare(b.id));
+}
+
+// Fill the list. Chosen: the model you had, or the provider's default, or the first one.
+function fillModels(models, wanted) {
+  aiModel.innerHTML = "";
+  const free = models.filter(m => m.free);
+  const groups = free.length ? [["gratis", free], ["de pago", models.filter(m => !m.free)]] : [["", models]];
+  for (const [label, list] of groups) {
+    const parent = label ? aiModel.appendChild(Object.assign(document.createElement("optgroup"), { label })) : aiModel;
+    for (const m of list) parent.append(new Option(m.name === m.id ? m.id : `${m.name} · ${m.id}`, m.id));
+  }
+  if (models.length === 0) aiModel.append(new Option("pega tu clave para ver tus modelos", ""));   // nothing to choose yet
+  aiModel.append(new Option("✎ otro (escribir el nombre)", OTHER_MODEL));
+  const ids = models.map(m => m.id);
+  const pick = [wanted, AI_PROVIDERS[aiProvider.value].model].find(id => id && ids.includes(id));
+  aiModel.value = pick || (models[0] ? models[0].id : "");
+  showOtherBox();
+}
+
+function showOtherBox() {
+  aiModelOther.classList.toggle("hidden", aiModel.value !== OTHER_MODEL);
+}
+
+// Paste a key (or change provider) → look up the models
+let lookup = 0;   // only the newest lookup counts, if you paste twice quickly
+async function findModels() {
+  const key = aiKey.value.trim();
+  if (!key) return;
+  if (aiProvider.value === "custom" && !aiUrl.value.trim()) {
+    setText(aiStatus, "escribe primero la dirección (URL)", "type the address first");
+    return;
+  }
+  const mine = ++lookup;
+  setText(aiStatus, "buscando tus modelos…", "looking up the models your key can use");
+  try {
+    const models = await listModels(aiProvider.value, key, aiUrl.value.trim());
+    if (mine !== lookup) return;
+    fillModels(models, ai && ai.provider === aiProvider.value ? ai.model : "");
+    setText(aiStatus, models.length ? `✓ ${models.length} modelos: elige uno` : "no encontré modelos: escribe el nombre",
+      models.length ? "pick a model, then save and test" : "no models found: type the name");
+  } catch (error) {
+    if (mine !== lookup) return;
+    setText(aiStatus, `✗ ${error.message}`, "check the key and the provider");
+  }
+}
+
 function drawAiSettings() {
-  const current = ai || { provider: "anthropic", key: "", model: AI_PROVIDERS.anthropic.model, url: "" };
+  const current = ai || { provider: "anthropic", key: "", model: "", url: "" };
   aiProvider.value = current.provider;
   aiKey.value = current.key;
-  aiModel.value = current.model;
   aiUrl.value = current.url || "";
+  // until you look up the list again, it shows just the model you chose
+  fillModels(current.model ? [{ id: current.model, name: current.model }] : [], current.model);
   updateAiForm();
   if (aiReady()) setText(aiStatus, `✓ Profe usa ${AI_PROVIDERS[ai.provider].name} · ${ai.model}`, "Profe's AI is connected");
 }
 
-// Changing provider: show its default model, where to get a key, and the URL box only for "otro"
+// Changing provider: where to get a key, and the URL box only for "otro"
 function updateAiForm() {
   const p = AI_PROVIDERS[aiProvider.value];
   $("#ai-url-row").classList.toggle("hidden", aiProvider.value !== "custom");
-  aiModel.placeholder = p.model || "el nombre del modelo";
-  setText(aiStatus, p.keys ? `tu clave: ${p.keys}` : "", p.keys ? "where to get your key" : "");
+  setText(aiStatus, p.keys ? `consigue tu clave en ${p.keys}` : "", p.keys ? "where to get your key" : "");
 }
 
 aiProvider.addEventListener("change", () => {
-  aiModel.value = AI_PROVIDERS[aiProvider.value].model;
+  fillModels([], "");
   updateAiForm();
+  findModels();
 });
+aiKey.addEventListener("change", findModels);
+aiKey.addEventListener("paste", () => setTimeout(findModels, 0));   // after the pasted text is in the box
+aiModel.addEventListener("change", showOtherBox);
+$("#ai-find-models").addEventListener("click", findModels);
 
 $("#ai-save").addEventListener("click", async () => {
-  ai = { provider: aiProvider.value, key: aiKey.value.trim(), model: aiModel.value.trim(), url: aiUrl.value.trim() };
+  const model = aiModel.value === OTHER_MODEL ? aiModelOther.value.trim() : aiModel.value;
+  ai = { provider: aiProvider.value, key: aiKey.value.trim(), model, url: aiUrl.value.trim() };
   save("ai", ai);
   if (!aiReady()) {
     setText(aiStatus, "✗ falta la clave, el modelo o la URL", "missing key, model or URL");
@@ -1639,7 +1741,7 @@ $("#ai-save").addEventListener("click", async () => {
     await askAI("Reply with one short friendly word in Spanish.", [{ role: "user", content: "hola" }]);
     setText(aiStatus, `✓ conectado: ${AI_PROVIDERS[ai.provider].name} · ${ai.model}`, "connected! Profe can talk now");
   } catch (error) {
-    setText(aiStatus, `✗ ${error.message}`, "it didn't work: check the key and the model");
+    setText(aiStatus, `✗ ${error.message}`, "it didn't work: try another model, or check the key");
   }
 });
 

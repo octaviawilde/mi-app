@@ -114,8 +114,11 @@
         <select id="ai-provider" class="text-input"></select>
         <label for="ai-key" data-hint="your API key">tu clave API</label>
         <input id="ai-key" class="text-input" type="password" autocomplete="off" spellcheck="false">
-        <label for="ai-model" data-hint="model">modelo</label>
-        <input id="ai-model" class="text-input" type="text" autocomplete="off" autocapitalize="off" spellcheck="false">
+        <label for="ai-model" data-hint="model: the list comes from your key">modelo</label>
+        <select id="ai-model" class="text-input"></select>
+        <input id="ai-model-other" class="text-input hidden" type="text" placeholder="nombre del modelo"
+               autocomplete="off" autocapitalize="off" spellcheck="false">
+        <button id="ai-find-models" class="link" data-hint="look up the models your key can use">↻ ver mis modelos</button>
         <div id="ai-url-row" class="hidden">
           <label for="ai-url" data-hint="the provider's address">dirección (URL)</label>
           <input id="ai-url" class="text-input" type="url" placeholder="https://…/v1" autocapitalize="off">
