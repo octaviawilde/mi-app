@@ -21,6 +21,8 @@ body {
 
 main {
   padding: 24px 16px;
+  padding-top: max(24px, env(safe-area-inset-top));      /* room for the iPhone notch */
+  padding-bottom: max(24px, env(safe-area-inset-bottom));
   max-width: 640px;
   margin: 0 auto;
 }

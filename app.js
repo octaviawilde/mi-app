@@ -145,14 +145,27 @@ botonMal.addEventListener("click", () => guardar(false));
 const botonExportar = document.querySelector("#exportar");
 const archivoInput = document.querySelector("#archivo");
 
-// Export: put all your progress in a file and download it
-function exportar() {
+// Export: put all your progress in a file.
+// On the phone: open the share menu (Save to Files, AirDrop...). Otherwise: download it.
+async function exportar() {
   const copia = { app: "mi-app", version: 1, fecha: fecha(), progreso: progreso };
   const texto = JSON.stringify(copia, null, 2);
-  const blob = new Blob([texto], { type: "application/json" });
+  const nombreArchivo = `mi-app-backup-${fecha()}.json`;
+  const archivo = new File([texto], nombreArchivo, { type: "application/json" });
+
+  if (navigator.canShare && navigator.canShare({ files: [archivo] })) {
+    try {
+      await navigator.share({ files: [archivo], title: nombreArchivo });
+      escribir(estado, "✓ backup exportado", "backup saved");
+    } catch (error) {
+      escribir(estado, "backup cancelado", "backup cancelled");
+    }
+    return;
+  }
+
   const enlace = document.createElement("a");
-  enlace.href = URL.createObjectURL(blob);
-  enlace.download = `mi-app-backup-${fecha()}.json`;
+  enlace.href = URL.createObjectURL(archivo);
+  enlace.download = nombreArchivo;
   enlace.click();
   escribir(estado, "✓ backup exportado", "backup saved");
 }
@@ -393,6 +406,11 @@ function marcar(tipo) {
   dibujarHoy();
 }
 
-// ---------- 16. Start the app ----------
+// ---------- 16. Works offline: register the service worker (sw.js) ----------
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("sw.js").catch(() => {});   // if it fails, the app still works online
+}
+
+// ---------- 17. Start the app ----------
 // At the very end, so everything above already exists when it runs.
 cargar();
