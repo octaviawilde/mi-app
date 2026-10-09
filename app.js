@@ -155,7 +155,7 @@ async function exportar() {
 
   if (navigator.canShare && navigator.canShare({ files: [archivo] })) {
     try {
-      await navigator.share({ files: [archivo], title: nombreArchivo });
+      await navigator.share({ files: [archivo] });
       escribir(estado, "✓ backup exportado", "backup saved");
     } catch (error) {
       escribir(estado, "backup cancelado", "backup cancelled");
