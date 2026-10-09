@@ -2,7 +2,8 @@
 const estado = document.querySelector("#estado");
 const pregunta = document.querySelector("#pregunta");
 const respuesta = document.querySelector("#respuesta");
-const botonGirar = document.querySelector("#girar");
+const tarjetaCaja = document.querySelector("#tarjeta");   // NEW: tap the card to flip it
+const toca = document.querySelector("#toca");
 const botonBien = document.querySelector("#bien");
 const botonMal = document.querySelector("#mal");
 
@@ -104,7 +105,7 @@ function siguiente() {
     escribir(pregunta, "✓ todo hecho por hoy", "all done for today");
     escribir(respuesta, "¿quieres más?_", "want more?");
     respuesta.classList.remove("oculta");
-    botonGirar.classList.add("oculta");
+    toca.classList.add("oculta");
     botonBien.classList.add("oculta");
     botonMal.classList.add("oculta");
     extra.classList.remove("oculta");   // NEW: show [ + 5 nuevas ] [ práctica libre ]
@@ -116,15 +117,17 @@ function siguiente() {
   escribir(pregunta, actual.es);   // no hint here: that would give away the answer!
   escribir(respuesta, actual.en + "\n" + actual.ejemplo);
   respuesta.classList.add("oculta");
-  botonGirar.classList.remove("oculta");
+  toca.classList.remove("oculta");
   botonBien.classList.add("oculta");
   botonMal.classList.add("oculta");
 }
 
 // 9. Flip: show the answer and the ✓ / ✗ buttons
 function girar() {
+  if (cola.length === 0) return;                            // "all done" screen: nothing to flip
+  if (!respuesta.classList.contains("oculta")) return;      // already flipped
   respuesta.classList.remove("oculta");
-  botonGirar.classList.add("oculta");
+  toca.classList.add("oculta");
   botonBien.classList.remove("oculta");
   botonMal.classList.remove("oculta");
 }
@@ -193,7 +196,7 @@ function practicaLibre() {
 }
 
 // 11. When a button is tapped, run a function
-botonGirar.addEventListener("click", girar);
+tarjetaCaja.addEventListener("click", girar);
 botonBien.addEventListener("click", () => guardar(true));
 botonMal.addEventListener("click", () => guardar(false));
 document.querySelector("#mas-nuevas").addEventListener("click", masNuevas);
@@ -472,7 +475,7 @@ if ("serviceWorker" in navigator) {
 
 // ---------- 17. Version + updates ----------
 // Change VERSION every time you publish, so you can see on the phone which version you have.
-const VERSION = "1.0";
+const VERSION = "1.1";
 document.querySelector("#version").textContent = `mi-app v${VERSION}`;
 
 // [ ↻ actualizar ]: get the newest files and restart the app

@@ -27,8 +27,9 @@ main {
   margin: 0 auto;
 }
 
+/* "oculta" (hidden) must ALWAYS win, even against rules written later in this file */
 .oculta {
-  display: none;
+  display: none !important;
 }
 
 /* ---------- Top: prompt, menu, status line ---------- */
@@ -87,10 +88,17 @@ button:active {
 
 /* ---------- Review: the flashcard ---------- */
 .tarjeta {
-  margin: 32px 0;
+  margin: 32px 0 24px;
   padding: 24px 16px;
   border: 1px solid var(--linea);
-  min-height: 140px;
+  min-height: 160px;
+  cursor: pointer;   /* the card itself is the "flip" button */
+}
+
+.toca {
+  margin: 24px 0 0;
+  font-size: 13px;
+  color: var(--tenue);
 }
 
 .pregunta {
@@ -107,6 +115,10 @@ button:active {
 .botones {
   display: flex;
   gap: 12px;
+}
+
+.botones button {
+  font-size: 16px;   /* a bit smaller, so "[ ✗ otra vez ]" fits on one line */
 }
 
 /* the two "want more?" buttons: one per line, so the text fits on a phone */
@@ -228,7 +240,7 @@ button:active {
 .pie {
   display: flex;
   gap: 12px;
-  margin-top: 48px;
+  margin-top: 12px;
 }
 
 .pie button,

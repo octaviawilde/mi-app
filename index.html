@@ -34,13 +34,13 @@
     </div>
 
     <div id="pantalla-repaso" class="oculta">
-      <section class="tarjeta">
+      <section id="tarjeta" class="tarjeta">
         <p id="pregunta" class="pregunta"></p>
         <p id="respuesta" class="respuesta oculta"></p>
+        <p id="toca" class="toca" data-pista="tap to see the answer">toca para girar</p>
       </section>
 
       <div class="botones">
-        <button id="girar" data-pista="flip">[ girar ]</button>
         <button id="mal" class="oculta" data-pista="again">[ ✗ otra vez ]</button>
         <button id="bien" class="oculta" data-pista="I know it">[ ✓ la sé ]</button>
       </div>
@@ -53,18 +53,20 @@
 
     <div id="pantalla-progreso" class="oculta">
       <div id="informe" class="informe"></div>
+
+      <!-- Your data: things you need only sometimes, so they live here, out of the way -->
+      <h2 class="titulo" data-pista="your data">tus datos</h2>
+      <footer class="pie">
+        <button id="exportar" data-pista="save a backup">[ exportar ]</button>
+        <label for="archivo" data-pista="load a file">[ importar ]</label>
+        <input type="file" id="archivo" accept=".json,application/json" class="oculta">
+      </footer>
+
+      <p class="version">
+        <button id="actualizar" data-pista="check for updates">↻ actualizar</button>
+        <span id="version"></span>
+      </p>
     </div>
-
-    <footer class="pie">
-      <button id="exportar" data-pista="save a backup">[ exportar ]</button>
-      <label for="archivo" data-pista="load a file">[ importar ]</label>
-      <input type="file" id="archivo" accept=".json,application/json" class="oculta">
-    </footer>
-
-    <p class="version">
-      <button id="actualizar" data-pista="check for updates">↻ actualizar</button>
-      <span id="version"></span>
-    </p>
   </main>
   <script src="app.js"></script>
 </body>
