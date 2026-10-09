@@ -8,7 +8,7 @@
 </head>
 <body>
   <main>
-    <p class="prompt">&gt; hola, Octavia<span class="cursor">_</span></p>
+    <p class="prompt">&gt; hola<span id="nombre"></span><span class="cursor">_</span></p>
 
     <nav class="menu">
       <button id="ver-hoy" class="activo" data-pista="today">[ hoy ]</button>
@@ -43,7 +43,7 @@
 
     <footer class="pie">
       <button id="exportar" data-pista="save a backup">[ exportar ]</button>
-      <label for="archivo" data-pista="load a backup">[ importar ]</label>
+      <label for="archivo" data-pista="load a file">[ importar ]</label>
       <input type="file" id="archivo" accept=".json,application/json" class="oculta">
     </footer>
   </main>

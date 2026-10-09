@@ -36,14 +36,33 @@ function escribir(elemento, es, en) {
   }
 }
 
-// 5. Load your cards, prepare today's queue, show the first card
+// NEW: read a JSON file from the app folder. If it isn't there, return null (no crash).
+async function leerArchivo(nombre) {
+  try {
+    const archivo = await fetch(nombre);
+    if (!archivo.ok) return null;   // e.g. 404 = file not found
+    return await archivo.json();
+  } catch (error) {
+    return null;
+  }
+}
+
+// NEW: read something saved on this device (or null)
+function leerGuardado(clave) {
+  return JSON.parse(localStorage.getItem(clave));
+}
+
+// 5. Load your cards and Profe's plan, then open the Today screen.
+//    Where from? 1) files next to the app (on your Mac: cards.json, hoy.json)
+//                2) a paquete you imported on this device (from iCloud Drive)
+//                3) the example deck, for anyone trying the app for the first time
 async function cargar() {
-  const archivo = await fetch("cards.json");
-  tarjetas = await archivo.json();
+  tarjetas = (await leerArchivo("cards.json")) || leerGuardado("tarjetas") || (await leerArchivo("ejemplo.json")) || [];
+  plan = (await leerArchivo("hoy.json")) || leerGuardado("plan");
+  ponerNombre();
   prepararCola();
   siguiente();
-  await cargarHoy();   // NEW: Profe's plan for today
-  mostrar("hoy");      // NEW: open on the Today screen
+  mostrar("hoy");
 }
 
 // 6. Today's queue = cards due for review + a few new ones
@@ -122,8 +141,6 @@ botonGirar.addEventListener("click", girar);
 botonBien.addEventListener("click", () => guardar(true));
 botonMal.addEventListener("click", () => guardar(false));
 
-cargar();
-
 // ---------- 12. Backup: export / import ----------
 const botonExportar = document.querySelector("#exportar");
 const archivoInput = document.querySelector("#archivo");
@@ -140,29 +157,49 @@ function exportar() {
   escribir(estado, "✓ backup exportado", "backup saved");
 }
 
-// Import: read a backup file and MERGE it with what's on this device.
-// For each card, keep the most recent answer (the one with the latest "ultima").
+// Import: read a file and use what's inside.
+//  - a paquete (from Victoria, in iCloud Drive/mi-app): your cards + today's plan
+//  - a backup (from [ exportar ]): your progress, MERGED with this device
+//    (for each card, the most recent answer wins: the latest "ultima")
 async function importar() {
   const archivo = archivoInput.files[0];
   if (!archivo) return;
   try {
     const copia = JSON.parse(await archivo.text());
-    if (!copia.progreso) throw new Error("not a backup");
-    let cambios = 0;
-    for (const id in copia.progreso) {
-      const suyo = copia.progreso[id];   // the card in the file
-      const mio = progreso[id];          // the same card on this device
-      if (!mio || (suyo.ultima || "") > (mio.ultima || "")) {
-        progreso[id] = suyo;
-        cambios++;
-      }
+    const partes = [];   // what we found, for the message
+
+    if (copia.tarjetas) {
+      tarjetas = copia.tarjetas;
+      localStorage.setItem("tarjetas", JSON.stringify(tarjetas));
+      partes.push(`${tarjetas.length} tarjetas`);
     }
-    localStorage.setItem("progreso", JSON.stringify(progreso));
+    if (copia.plan) {
+      plan = copia.plan;
+      localStorage.setItem("plan", JSON.stringify(plan));
+      partes.push("plan de hoy");
+    }
+    if (copia.progreso) {
+      let cambios = 0;
+      for (const id in copia.progreso) {
+        const suyo = copia.progreso[id];   // the card in the file
+        const mio = progreso[id];          // the same card on this device
+        if (!mio || (suyo.ultima || "") > (mio.ultima || "")) {
+          progreso[id] = suyo;
+          cambios++;
+        }
+      }
+      localStorage.setItem("progreso", JSON.stringify(progreso));
+      partes.push(`progreso de ${cambios} tarjetas`);
+    }
+    if (partes.length === 0) throw new Error("not a mi-app file");
+
+    ponerNombre();
     prepararCola();
     siguiente();
-    escribir(estado, `✓ importado: ${cambios} tarjetas actualizadas`, `imported: ${cambios} cards updated`);
+    mostrar("hoy");
+    escribir(estado, `✓ importado: ${partes.join(" · ")}`, "imported");
   } catch (error) {
-    escribir(estado, "✗ ese archivo no es un backup de mi-app", "that file is not a mi-app backup");
+    escribir(estado, "✗ ese archivo no es de mi-app", "that file is not a mi-app file");
   }
   archivoInput.value = "";   // so the same file can be imported again
 }
@@ -203,7 +240,7 @@ const informe = document.querySelector("#informe");
 const TEMAS_EN = {
   saludos: "greetings", animales: "animals", adjetivos: "adjectives", verbos: "verbs",
   "en clase": "in class", "básicas": "basics", planes: "plans", fiesta: "party",
-  "sobre mí": "about me", tiempo: "time",
+  "sobre mí": "about me", tiempo: "time", comida: "food", nuevas: "new words",
 };
 
 // Each card is "aprendida" (box 3+), "vista" (seen) or "nueva" (never seen)
@@ -299,16 +336,13 @@ function dibujarProgreso() {
 const saludo = document.querySelector("#saludo");
 const listaTareas = document.querySelector("#tareas");
 const notaPlan = document.querySelector("#nota-plan");
+const nombre = document.querySelector("#nombre");
 let plan = null;
 let hechas = JSON.parse(localStorage.getItem("hechas")) || {};   // e.g. { "2026-10-09": ["mision"] }
 
-async function cargarHoy() {
-  try {
-    const archivo = await fetch("hoy.json");
-    plan = await archivo.json();
-  } catch (error) {
-    plan = null;   // no plan file yet
-  }
+// NEW: "> hola, Octavia_" with the name from the plan (or just "> hola_")
+function ponerNombre() {
+  nombre.textContent = plan && plan.nombre ? `, ${plan.nombre}` : "";
 }
 
 function dibujarHoy() {
@@ -358,3 +392,7 @@ function marcar(tipo) {
   localStorage.setItem("hechas", JSON.stringify(hechas));
   dibujarHoy();
 }
+
+// ---------- 16. Start the app ----------
+// At the very end, so everything above already exists when it runs.
+cargar();
