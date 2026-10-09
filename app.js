@@ -2,12 +2,13 @@
 // Plain HTML + CSS + JavaScript, no build tools. Read it top to bottom:
 //   1 settings · 2 page elements + state · 3 helpers · 4 saved data (+ migration from v1.5)
 //   5 loading · 6 today's queue · 7 review cards · 8 writing · 9 more practice · 10 backup
-//   11 screens · 12 progress · 13 today · 14 Profe's interview · 15 offline + updates · 16 start
+//   11 screens · 12 progress · 13 today · 14 Profe's interview · 15 Profe with AI (chat)
+//   16 offline + updates · 17 start
 // The code is in English so anyone can read it and contribute.
 // The text the learner SEES is Spanish (with small English hints): that's content, not code.
 
 // ---------- 1. Settings (change these numbers whenever you like) ----------
-const VERSION = "1.6";                      // change it every time you publish
+const VERSION = "1.7";                      // change it every time you publish
 const NEW_PER_DAY = 15;                     // new cards per day (when the profile doesn't say)
 const BOX_DAYS = [0, 0, 1, 3, 7, 14];       // days before a card comes back, by box (1–5)
 const NEW_PER_MINUTES = { 5: 5, 15: 10, 30: 15, 60: 20 };   // minutes per day (profile) → new cards per day
@@ -26,7 +27,8 @@ const tapHint = $("#tap-hint");
 const answers = $("#answers");            // the 4 answer buttons
 const more = $("#more");                  // [ + 5 nuevas ] [ práctica libre ]
 
-let cards = [];             // all your cards
+let cards = [];             // all your cards: your deck + the ones Profe gave you
+let profeCards = [];        // cards Profe made for you in the chat (saved apart, so a new deck never deletes them)
 let queue = [];             // today's queue (the cards waiting for you)
 let current = null;         // the card on the screen now
 let writingQueue = [];      // today's writing queue
@@ -73,6 +75,22 @@ async function loadJson(path) {
   } catch (error) {
     return null;
   }
+}
+
+// Same, for a text file (Profe's core.md)
+async function loadText(path) {
+  try {
+    const response = await fetch(path);
+    return response.ok ? await response.text() : null;
+  } catch (error) {
+    return null;
+  }
+}
+
+// Your deck + Profe's cards (a Profe card that's already in your deck isn't added twice)
+function setCards(deck) {
+  const inDeck = new Set(deck.map(c => c.es.toLowerCase()));
+  cards = [...deck, ...profeCards.filter(c => !inDeck.has(c.es.toLowerCase()))];
 }
 
 // Read / write something saved on this device
@@ -188,9 +206,11 @@ async function start() {
   progress = migrateProgress(loadSaved("progress") || {});
   done = migrateDone(loadSaved("done") || {});
   profile = migrateProfile(loadSaved("profile"));
-  cards = migrateCards((await loadJson("cards.json")) || loadSaved("cards") || (await loadJson("sample.json")) || []);
+  profeCards = loadSaved("profeCards") || [];
+  setCards(migrateCards((await loadJson("cards.json")) || loadSaved("cards") || (await loadJson("sample.json")) || []));
   plan = migratePlan((await loadJson("today.json")) || loadSaved("plan"));
   interview = await loadJson("profe/interview.json");
+  profeCore = await loadText("profe/core.md");   // Profe's teaching method, for the AI
 
   applyHints();
   showName();
@@ -209,6 +229,10 @@ function newPerDay() {
   return (profile && NEW_PER_MINUTES[profile.minutes]) || NEW_PER_DAY;
 }
 
+function isFromProfe(c) {
+  return String(c.id).startsWith("p-");
+}
+
 function isDue(c) {
   return progress[c.id] && (progress[c.id].due || day()) <= day();
 }
@@ -218,8 +242,9 @@ function buildQueue() {
   const today = day();
   const reviews = cards.filter(isDue);
   const newToday = Object.values(progress).filter(p => p.first === today).length;
-  const newCards = cards.filter(c => !progress[c.id]).slice(0, Math.max(0, newPerDay() - newToday));
-  queue = [...reviews, ...newCards];
+  const fromProfe = cards.filter(c => !progress[c.id] && isFromProfe(c));   // you asked for these: always today
+  const newCards = cards.filter(c => !progress[c.id] && !isFromProfe(c)).slice(0, Math.max(0, newPerDay() - newToday));
+  queue = [...reviews, ...fromProfe, ...newCards];
   writingQueue = writingForToday();
 }
 
@@ -228,8 +253,9 @@ function leftToday() {
   const today = day();
   const reviews = cards.filter(isDue).length;
   const newToday = Object.values(progress).filter(p => p.first === today).length;
-  const unseen = cards.filter(c => !progress[c.id]).length;
-  return reviews + Math.min(unseen, Math.max(0, newPerDay() - newToday)) + writingForToday().length;
+  const fromProfe = cards.filter(c => !progress[c.id] && isFromProfe(c)).length;
+  const unseen = cards.filter(c => !progress[c.id] && !isFromProfe(c)).length;
+  return reviews + fromProfe + Math.min(unseen, Math.max(0, newPerDay() - newToday)) + writingForToday().length;
 }
 
 // A card is "learned" when it reaches box 3 (right on 2 different days)
@@ -529,7 +555,8 @@ const fileInput = $("#file");
 // Export: put all your progress + your profile in a file.
 // On the phone: open the share menu (Save to Files, AirDrop...). Otherwise: download it.
 async function exportBackup() {
-  const backup = { app: "mi-app", version: 2, date: day(), progress: progress, profile: profile };
+  // your AI key is NOT in here on purpose: a backup file can end up anywhere
+  const backup = { app: "mi-app", version: 2, date: day(), progress: progress, profile: profile, profeCards: profeCards, talk: talk };
   const fileName = `mi-app-backup-${day()}.json`;
   const file = new File([JSON.stringify(backup, null, 2)], fileName, { type: "application/json" });
 
@@ -563,9 +590,22 @@ async function importFile() {
 
     const newCards = data.cards || data.tarjetas;
     if (newCards) {
-      cards = migrateCards(newCards);
-      save("cards", cards);
-      found.push(`${cards.length} tarjetas`);
+      const deck = migrateCards(newCards);
+      save("cards", deck);
+      setCards(deck);   // Profe's cards stay
+      found.push(`${deck.length} tarjetas`);
+    }
+    if (data.profeCards) {
+      const known = new Set(profeCards.map(c => c.id));
+      const added = data.profeCards.filter(c => !known.has(c.id));
+      profeCards = [...profeCards, ...added];
+      save("profeCards", profeCards);
+      setCards(cards.filter(c => !isFromProfe(c)));
+      if (added.length) found.push(`${added.length} tarjetas de Profe`);
+    }
+    if (data.talk && data.talk.length > talk.length) {
+      talk = data.talk;   // the longer conversation wins
+      save("talk", talk);
     }
     if (data.plan) {
       plan = migratePlan(data.plan);
@@ -615,12 +655,14 @@ const screens = {
   today: $("#screen-today"),
   review: $("#screen-review"),
   progress: $("#screen-progress"),
-  profe: $("#screen-profe"),   // chatting with Profe
+  interview: $("#screen-interview"),   // meeting Profe (the first time)
+  profe: $("#screen-profe"),           // chatting with Profe (needs an AI)
 };
 const navButtons = {
   today: $("#nav-today"),
   review: $("#nav-review"),
   progress: $("#nav-progress"),
+  profe: $("#nav-profe"),
 };
 
 // Show ONE screen and hide the others. toggle(class, yes/no) adds or removes a class.
@@ -629,16 +671,18 @@ function show(name) {
     screens[n].classList.toggle("hidden", n !== name);
     if (navButtons[n]) navButtons[n].classList.toggle("active", n === name);
   }
-  // while you talk to Profe, hide the menu and the status line (calm, one thing at a time)
-  $(".menu").classList.toggle("hidden", name === "profe");
-  statusLine.classList.toggle("hidden", name === "profe");
+  // during the interview, hide the menu and the status line (calm, one thing at a time)
+  $(".menu").classList.toggle("hidden", name === "interview");
+  statusLine.classList.toggle("hidden", name === "interview" || name === "profe");
   if (name === "progress") drawProgress();
   if (name === "today") drawToday();
+  if (name === "profe") drawTalk();
 }
 
 navButtons.today.addEventListener("click", () => show("today"));
 navButtons.review.addEventListener("click", () => show("review"));
 navButtons.progress.addEventListener("click", () => show("progress"));
+navButtons.profe.addEventListener("click", () => show("profe"));
 
 // ---------- 12. Progress screen ----------
 const report = $("#report");
@@ -647,7 +691,7 @@ const report = $("#report");
 const TOPICS_EN = {
   saludos: "greetings", animales: "animals", adjetivos: "adjectives", verbos: "verbs",
   "en clase": "in class", "básicas": "basics", planes: "plans", fiesta: "party",
-  "sobre mí": "about me", tiempo: "time", comida: "food", nuevas: "new words",
+  "sobre mí": "about me", tiempo: "time", comida: "food", nuevas: "new words", "de Profe": "from Profe",
 };
 
 // Each card is "learned" (box 3+), "seen" or "new" (never seen)
@@ -737,6 +781,7 @@ function drawProgress() {
   report.append(ul);
 
   drawProfile();   // what Profe knows about you
+  drawAiSettings();
 }
 
 // ---------- 13. Today screen (the plan comes from Profe: today.json) ----------
@@ -839,10 +884,10 @@ function fillIn(text) {
   return text.replace(/\{(\w+)\}/g, (gap, key) => gaps[key] || "");
 }
 
-// Add one line to the chat. who = "profe" or "you"
-function say(who, es, en) {
+// Add one line to a chat. who = "profe" or "you". where = the interview chat, or the AI chat
+function say(who, es, en, where = chat) {
   const line = make("p", "message " + who, es, en);
-  chat.append(line);
+  where.append(line);
   line.scrollIntoView({ block: "end", behavior: "smooth" });
 }
 
@@ -1063,7 +1108,7 @@ async function runInterview(savedAnswers) {
   answerLog = [];
   replay = [...savedAnswers];
   chat.innerHTML = "";
-  show("profe");
+  show("interview");
 
   for (const step of interview.steps) {
     if (step.type === "levels") {   // one question per language you speak
@@ -1092,7 +1137,7 @@ async function runInterview(savedAnswers) {
   }
 
   // Done: save the profile on this device and open the app
-  profile = { ...draft, created: profile ? profile.created : day(), updated: new Date().toISOString() };
+  profile = { ...draft, notes: profile ? profile.notes : [], created: profile ? profile.created : day(), updated: new Date().toISOString() };
   save("profile", profile);
   applyHints();
   showName();
@@ -1122,6 +1167,7 @@ function profileLines(p) {
     [`vives en: ${p.city || "—"} · ${p.school ? "con escuela" : "sin escuela"}`, "you live in · with / without a school"],
     [`te gusta: ${list("interests", p.interests)}`, "you like"],
     [`tiempo: ${optionLabel("minutes", p.minutes)} al día · ${NEW_PER_MINUTES[p.minutes]} palabras nuevas`, "time per day · new words"],
+    ...(p.notes || []).map(note => [`✎ ${note}`, "Profe remembers"]),
   ];
 }
 
@@ -1140,7 +1186,328 @@ function drawProfile() {
   box.append(again);
 }
 
-// ---------- 15. Offline + updates ----------
+
+// ---------- 15. Profe with AI (the chat) ----------
+// Profe's brain is an AI model. The app has no server: your phone talks DIRECTLY to the
+// AI provider you choose, with YOUR API key. The key is saved only on this device
+// (localStorage "ai"), it's never in a backup, and it's only sent to that provider.
+//
+// What the AI gets with every message:
+//   1. profe/core.md: how Profe teaches (the Núcleo, the same for everyone)
+//   2. your profile + Profe's notes about you + a snapshot of your cards (what you know today)
+//   3. the last messages of your conversation
+// So every Profe is the same teacher, and every Profe knows a different learner.
+
+// The providers Profe can use. Most providers use OpenAI's request format, so "custom" covers many more.
+const AI_PROVIDERS = {
+  anthropic: { name: "Anthropic (Claude)", model: "claude-opus-5-5", keys: "console.anthropic.com" },
+  openai: { name: "OpenAI", url: "https://api.openai.com/v1", model: "", keys: "platform.openai.com" },
+  gemini: { name: "Google Gemini", model: "", keys: "aistudio.google.com" },
+  openrouter: { name: "OpenRouter (muchos modelos)", url: "https://openrouter.ai/api/v1", model: "", keys: "openrouter.ai" },
+  custom: { name: "Otro (compatible con OpenAI)", url: "", model: "", keys: "" },
+};
+const TALK_MEMORY = 20;   // how many recent messages the AI sees (more = better memory, more cost)
+
+let ai = loadSaved("ai");            // { provider, key, model, url }
+let talk = loadSaved("talk") || [];  // the conversation: [{ role: "user" | "assistant", content }]
+let profeCore = null;                // the text of profe/core.md
+let waiting = false;                 // true while Profe is "typing"
+
+const talkLog = $("#talk");
+const talkInput = $("#talk-input");
+const talkSend = $("#talk-send");
+
+// ---- Talking to the AI provider ----
+// Claude options: "effort" (how hard the model thinks) and an automatic fallback model
+// if the first one declines. Only the models that support them get them.
+function claudeOptions(model, body, headers) {
+  if (/^claude-(opus|sonnet|haiku|fable)-5/.test(model)) body.output_config = { effort: "low" };   // chat: quick answers
+  if (["claude-fable-5-1", "claude-opus-5-5", "claude-opus-5", "claude-sonnet-5-5"].includes(model)) {
+    headers["anthropic-beta"] = "server-side-fallback-2026-07-01";
+    body.fallbacks = "default";
+  }
+}
+
+// Send the conversation, get Profe's answer as text. Each provider has its own format.
+async function askAI(system, messages) {
+  const { provider, key, model } = ai;
+  let url, headers, body, read;
+
+  if (provider === "anthropic") {
+    url = "https://api.anthropic.com/v1/messages";
+    headers = {
+      "content-type": "application/json",
+      "x-api-key": key,
+      "anthropic-version": "2023-06-01",
+      // Anthropic's official switch for calling the API from a web page.
+      // "dangerous" because the key lives in the browser: fine here, it's the user's own key on their own phone.
+      "anthropic-dangerous-direct-browser-access": "true",
+    };
+    body = { model, max_tokens: 16000, system, messages };
+    claudeOptions(model, body, headers);
+    read = data => {
+      if (data.stop_reason === "refusal") throw new Error("Profe no puede responder a eso");
+      return data.content.filter(block => block.type === "text").map(block => block.text).join("");
+    };
+  } else if (provider === "gemini") {
+    url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`;
+    headers = { "content-type": "application/json", "x-goog-api-key": key };
+    body = {
+      systemInstruction: { parts: [{ text: system }] },
+      contents: messages.map(m => ({ role: m.role === "assistant" ? "model" : "user", parts: [{ text: m.content }] })),
+    };
+    read = data => data.candidates[0].content.parts.map(part => part.text || "").join("");
+  } else {   // openai, openrouter, custom: the OpenAI format
+    url = (ai.url || AI_PROVIDERS[provider].url).replace(/\/+$/, "") + "/chat/completions";
+    headers = { "content-type": "application/json", authorization: `Bearer ${key}` };
+    body = { model, messages: [{ role: "system", content: system }, ...messages] };
+    read = data => data.choices[0].message.content;
+  }
+
+  let response;
+  try {
+    response = await fetch(url, { method: "POST", headers, body: JSON.stringify(body) });
+  } catch (error) {
+    throw new Error("sin conexión con la IA (¿internet?)");
+  }
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const detail = (data.error && (data.error.message || data.error)) || response.statusText;
+    if (response.status === 401 || response.status === 403) throw new Error(`la clave no funciona (${detail})`);
+    if (response.status === 429) throw new Error(`demasiados mensajes o sin saldo (${detail})`);
+    throw new Error(`error ${response.status}: ${detail}`);
+  }
+  return read(data);
+}
+
+function aiReady() {
+  return Boolean(ai && ai.key && ai.model && (ai.provider !== "custom" || ai.url));
+}
+
+// ---- What Profe knows about you (sent with every message) ----
+function learnerContext() {
+  const lines = [];
+  const lang = code => (interview && interview.languages[code] ? interview.languages[code].en : code);
+  if (profile) {
+    const spoken = Object.entries(profile.languages || {}).map(([c, level]) => `${lang(c)} (${level})`).join(", ");
+    lines.push("# The learner (profile)",
+      `Name: ${profile.name}`,
+      `Learning: ${lang(profile.learning)}, level ${profile.level}`,
+      `Speaks: ${spoken || "unknown"}`,
+      `Hint language: ${profile.hints === "none" ? "none (no translations)" : lang(profile.hints)}`,
+      `Why: ${(profile.reasons || []).join(", ") || "unknown"}`,
+      `Lives in: ${profile.city || "unknown"} · goes to a language school: ${profile.school ? "yes" : "no"}`,
+      `Interests: ${(profile.interests || []).join(", ") || "unknown"}`,
+      `Time per day: ${profile.minutes} min`);
+    if ((profile.notes || []).length) lines.push("Your notes about them:", ...profile.notes.map(n => `- ${n}`));
+  } else {
+    lines.push("# The learner", "No profile yet: ask them a few questions first.");
+  }
+
+  const learned = cards.filter(c => stateOf(c) === "learned").map(c => c.es);
+  const seen = cards.filter(c => stateOf(c) === "seen").map(c => c.es);
+  const weak = cards.filter(c => progress[c.id] && progress[c.id].wrong > 0 && stateOf(c) !== "learned")
+    .sort((x, y) => progress[y.id].wrong - progress[x.id].wrong).slice(0, 10)
+    .map(c => `${c.es} (✗${progress[c.id].wrong})`);
+  lines.push("", `# Learning snapshot (today is ${day()})`,
+    `Cards: ${cards.length} · learned: ${learned.length} · seen, not learned yet: ${seen.length} · still to review today: ${leftToday()}`,
+    `Learned words: ${learned.slice(0, 300).join(", ") || "none yet"}`,
+    `Seen words: ${seen.slice(0, 200).join(", ") || "none yet"}`,
+    `Weak words: ${weak.join(", ") || "none yet"}`);
+  if (plan) lines.push(`Today's plan: ${plan.tasks.map(t => t.en || t.text).join(" · ")}`);
+  return lines.join("\n");
+}
+
+// ---- The chat screen ----
+const ACTION = /^\s*\[\[\s*(card|go|note)\s*\|(.*)\]\]\s*$/i;
+const GO_TO = { review: ["→ repasar", "go to review"], progress: ["→ progreso", "go to progress"], today: ["→ hoy", "go to today"] };
+
+// Show one message. Profe's action lines become buttons.
+function showMessage(message) {
+  if (message.role === "user") {
+    say("you", message.content, undefined, talkLog);
+    return;
+  }
+  const text = [];
+  const actions = [];
+  for (const line of message.content.split("\n")) {
+    const match = line.match(ACTION);
+    if (match) actions.push([match[1].toLowerCase(), match[2].split("|").map(part => part.trim())]);
+    else text.push(line);
+  }
+  const words = text.join("\n").trim();
+  if (words) say("profe", words, undefined, talkLog);
+
+  for (const [type, parts] of actions) {
+    if (type === "card" && parts[0]) {
+      const [es, en = "", example = ""] = parts;
+      const have = cards.some(c => c.es.toLowerCase() === es.toLowerCase());
+      const button = make("button", "offer", have ? `✓ ${es}` : `+ ${es} · ${en}`, have ? "already in your cards" : "add to my cards");
+      button.disabled = have;
+      button.onclick = () => {
+        addProfeCard(es, en, example);
+        setText(button, `✓ ${es}`, "added to your cards");
+        button.disabled = true;
+      };
+      talkLog.append(button);
+    }
+    if (type === "go" && GO_TO[parts[0]]) {
+      const target = parts[0];
+      const button = make("button", "offer", ...GO_TO[target]);
+      button.onclick = () => show(target);
+      talkLog.append(button);
+    }
+    if (type === "note" && parts[0]) {
+      talkLog.append(make("p", "caption", `✎ Profe recordará: ${parts.join(" | ")}`, "Profe will remember this"));
+    }
+  }
+}
+
+// A card Profe offered → your deck (it comes up in today's review)
+function addProfeCard(es, en, example) {
+  const card = { id: `p-${Date.now()}`, es, en, example, topic: "de Profe" };
+  profeCards.push(card);
+  save("profeCards", profeCards);
+  cards.push(card);
+  buildQueue();
+  nextCard();
+}
+
+// Profe's notes about you go into your profile (max 30, the newest win)
+function rememberNotes(content) {
+  if (!profile) return;
+  for (const line of content.split("\n")) {
+    const match = line.match(ACTION);
+    if (match && match[1].toLowerCase() === "note") {
+      profile.notes = [...(profile.notes || []), match[2].trim()].slice(-30);
+      profile.updated = new Date().toISOString();
+      save("profile", profile);
+    }
+  }
+}
+
+function drawTalk() {
+  talkLog.innerHTML = "";
+  const name = profile ? profile.name : "";
+  say("profe", `¡Hola${name ? ", " + name : ""}! Escríbeme una frase que has oído hoy, o pregúntame lo que quieras.`,
+    "Hi! Send me a sentence you heard today, or ask me anything.", talkLog);
+  if (!aiReady()) {
+    say("profe", "Para hablar contigo necesito una IA. Conecta tu cuenta y vuelve.",
+      "To talk with you I need an AI. Connect your account and come back.", talkLog);
+    const connect = make("button", "offer", "→ conectar mi IA", "connect my AI");
+    connect.onclick = () => {
+      show("progress");
+      $("#ai-settings").scrollIntoView({ behavior: "smooth" });
+    };
+    talkLog.append(connect);
+  }
+  for (const message of talk) showMessage(message);
+  talkInput.scrollIntoView({ block: "end" });
+}
+
+async function sendToProfe() {
+  const text = talkInput.value.trim();
+  if (!text || waiting) return;
+  if (!aiReady()) {
+    drawTalk();
+    return;
+  }
+  talkInput.value = "";
+  const message = { role: "user", content: text };
+  talk.push(message);
+  showMessage(message);
+
+  waiting = true;
+  const typing = make("p", "message profe typing", "…");
+  talkLog.append(typing);
+  typing.scrollIntoView({ block: "end", behavior: "smooth" });
+
+  try {
+    // the API needs the conversation to start with you, not with Profe
+    let recent = talk.slice(-TALK_MEMORY);
+    while (recent.length && recent[0].role !== "user") recent = recent.slice(1);
+    const system = `${profeCore || "You are Profe, a friendly language teacher."}\n\n${learnerContext()}`;
+    const answer = await askAI(system, recent);
+    const reply = { role: "assistant", content: answer };
+    talk.push(reply);
+    save("talk", talk.slice(-200));
+    rememberNotes(answer);
+    typing.remove();
+    showMessage(reply);
+  } catch (error) {
+    talk.pop();   // not answered: take your message back, so you can send it again
+    talkInput.value = text;
+    typing.remove();
+    talkLog.lastElementChild.remove();
+    talkLog.append(make("p", "caption warning", `✗ ${error.message}`, "Profe couldn't answer"));
+  }
+  waiting = false;
+}
+
+talkSend.addEventListener("click", sendToProfe);
+talkInput.addEventListener("keydown", event => { if (event.key === "Enter") sendToProfe(); });
+$("#talk-new").addEventListener("click", () => {
+  talk = [];   // Profe's notes about you stay in your profile
+  save("talk", talk);
+  drawTalk();
+});
+
+// ---- [ progreso ] → "la IA de Profe": choose a provider, paste your key ----
+const aiProvider = $("#ai-provider");
+const aiKey = $("#ai-key");
+const aiModel = $("#ai-model");
+const aiUrl = $("#ai-url");
+const aiStatus = $("#ai-status");
+
+for (const id in AI_PROVIDERS) aiProvider.append(new Option(AI_PROVIDERS[id].name, id));
+
+function drawAiSettings() {
+  const current = ai || { provider: "anthropic", key: "", model: AI_PROVIDERS.anthropic.model, url: "" };
+  aiProvider.value = current.provider;
+  aiKey.value = current.key;
+  aiModel.value = current.model;
+  aiUrl.value = current.url || "";
+  updateAiForm();
+  if (aiReady()) setText(aiStatus, `✓ Profe usa ${AI_PROVIDERS[ai.provider].name} · ${ai.model}`, "Profe's AI is connected");
+}
+
+// Changing provider: show its default model, where to get a key, and the URL box only for "otro"
+function updateAiForm() {
+  const p = AI_PROVIDERS[aiProvider.value];
+  $("#ai-url-row").classList.toggle("hidden", aiProvider.value !== "custom");
+  aiModel.placeholder = p.model || "el nombre del modelo";
+  setText(aiStatus, p.keys ? `tu clave: ${p.keys}` : "", p.keys ? "where to get your key" : "");
+}
+
+aiProvider.addEventListener("change", () => {
+  aiModel.value = AI_PROVIDERS[aiProvider.value].model;
+  updateAiForm();
+});
+
+$("#ai-save").addEventListener("click", async () => {
+  ai = { provider: aiProvider.value, key: aiKey.value.trim(), model: aiModel.value.trim(), url: aiUrl.value.trim() };
+  save("ai", ai);
+  if (!aiReady()) {
+    setText(aiStatus, "✗ falta la clave, el modelo o la URL", "missing key, model or URL");
+    return;
+  }
+  setText(aiStatus, "probando…", "testing");
+  try {
+    await askAI("Reply with one short friendly word in Spanish.", [{ role: "user", content: "hola" }]);
+    setText(aiStatus, `✓ conectado: ${AI_PROVIDERS[ai.provider].name} · ${ai.model}`, "connected! Profe can talk now");
+  } catch (error) {
+    setText(aiStatus, `✗ ${error.message}`, "it didn't work: check the key and the model");
+  }
+});
+
+$("#ai-forget").addEventListener("click", () => {
+  ai = null;
+  localStorage.removeItem("ai");
+  drawAiSettings();
+  setText(aiStatus, "clave borrada de este teléfono", "key deleted from this phone");
+});
+
+// ---------- 16. Offline + updates ----------
 // The service worker (sw.js) keeps a copy of the app, so it opens with no internet.
 if ("serviceWorker" in navigator) {
   // updateViaCache "none" = always check the real sw.js, never an old saved copy
@@ -1172,6 +1539,6 @@ document.addEventListener("visibilitychange", () => {
   }
 });
 
-// ---------- 16. Start the app ----------
+// ---------- 17. Start the app ----------
 // At the very end, so everything above already exists when it runs.
 start();

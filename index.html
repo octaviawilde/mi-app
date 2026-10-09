@@ -21,9 +21,10 @@
     <p class="prompt">&gt; hola<span id="name"></span><span class="cursor">_</span></p>
 
     <nav class="menu">
-      <button id="nav-today" class="active" data-hint="today">[ hoy ]</button>
-      <button id="nav-review" data-hint="review">[ repasar ]</button>
-      <button id="nav-progress" data-hint="progress">[ progreso ]</button>
+      <button id="nav-today" class="active" data-hint="today">hoy</button>
+      <button id="nav-profe" data-hint="your teacher">profe</button>
+      <button id="nav-review" data-hint="review">repasar</button>
+      <button id="nav-progress" data-hint="progress">progreso</button>
     </nav>
 
     <p class="line" id="status" data-hint="loading cards">cargando tarjetas...</p>
@@ -73,8 +74,19 @@
       </div>
     </div>
 
-    <!-- Profe's chat (first: the interview to meet you) -->
+    <!-- Profe's chat with AI: send a sentence from your life, ask anything -->
     <div id="screen-profe" class="hidden">
+      <div id="talk" class="chat"></div>
+      <div class="chat-compose">
+        <input id="talk-input" class="text-input" type="text" autocomplete="off" autocorrect="off"
+               spellcheck="false" enterkeyhint="send" placeholder="escribe a Profe…">
+        <button id="talk-send" data-hint="send">→</button>
+      </div>
+      <button id="talk-new" class="link" data-hint="new conversation (Profe keeps its notes about you)">↺ nueva conversación</button>
+    </div>
+
+    <!-- The first meeting with Profe: the interview -->
+    <div id="screen-interview" class="hidden">
       <div id="chat" class="chat"></div>
       <div id="chat-compose" class="chat-compose hidden">
         <input id="chat-input" class="text-input" type="text" autocomplete="off" autocorrect="off"
@@ -90,6 +102,27 @@
       <!-- Your profile: what Profe knows about you -->
       <h2 class="heading" data-hint="your profile: what Profe knows about you">tu ficha</h2>
       <div id="profile" class="profile"></div>
+
+      <!-- Profe's AI: your provider + your own API key (it never leaves this device, except to that provider) -->
+      <h2 class="heading" data-hint="the AI that powers Profe">la IA de Profe</h2>
+      <div id="ai-settings" class="ai-settings">
+        <label for="ai-provider" data-hint="provider">proveedor</label>
+        <select id="ai-provider" class="text-input"></select>
+        <label for="ai-key" data-hint="your API key">tu clave API</label>
+        <input id="ai-key" class="text-input" type="password" autocomplete="off" spellcheck="false">
+        <label for="ai-model" data-hint="model">modelo</label>
+        <input id="ai-model" class="text-input" type="text" autocomplete="off" autocapitalize="off" spellcheck="false">
+        <div id="ai-url-row" class="hidden">
+          <label for="ai-url" data-hint="the provider's address">dirección (URL)</label>
+          <input id="ai-url" class="text-input" type="url" placeholder="https://…/v1" autocapitalize="off">
+        </div>
+        <p id="ai-status" class="caption"></p>
+        <div class="buttons">
+          <button id="ai-save" data-hint="save and test">guardar y probar</button>
+          <button id="ai-forget" data-hint="delete the key">borrar</button>
+        </div>
+        <p class="caption" data-hint="your key only lives on this phone and is never in backups">🔒 tu clave solo vive en este teléfono</p>
+      </div>
 
       <!-- Your data: things you need only sometimes, so they live here, out of the way -->
       <h2 class="heading" data-hint="your data">tus datos</h2>
