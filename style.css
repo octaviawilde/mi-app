@@ -1,0 +1,82 @@
+/* Colours in one place: change them here, and the whole app changes */
+:root {
+  --fondo: #050805;
+  --verde: #39ff6a;
+  --verde-suave: #1f8f3d;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--fondo);
+  color: var(--verde);
+  font-family: "SF Mono", Menlo, Consolas, monospace;
+  font-size: 18px;
+  line-height: 1.6;
+}
+
+main {
+  padding: 24px 16px;
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.prompt {
+  text-shadow: 0 0 6px rgba(57, 255, 106, 0.5);
+}
+
+.line {
+  color: var(--verde-suave);
+  margin: 4px 0;
+}
+
+.cursor {
+  animation: parpadeo 1s steps(1) infinite;
+}
+
+@keyframes parpadeo {
+  50% { opacity: 0; }
+}
+
+/* ---------- Day 2: the flashcard ---------- */
+.tarjeta {
+  margin: 32px 0;
+  padding: 24px 16px;
+  border: 1px solid var(--verde-suave);
+  min-height: 140px;
+}
+
+.pregunta {
+  font-size: 28px;
+  margin: 0 0 16px;
+}
+
+.respuesta {
+  color: var(--verde-suave);
+  white-space: pre-line;
+  margin: 0;
+}
+
+.oculta {
+  display: none;
+}
+
+.botones {
+  display: flex;
+  gap: 12px;
+}
+
+button {
+  flex: 1;
+  font: inherit;
+  color: var(--verde);
+  background: transparent;
+  border: 1px solid var(--verde);
+  padding: 14px 8px;
+  cursor: pointer;
+}
+
+button:active {
+  background: var(--verde);
+  color: var(--fondo);
+}

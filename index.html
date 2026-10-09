@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>mi-app_</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main>
+    <p class="prompt">&gt; hola, Octavia<span class="cursor">_</span></p>
+    <p class="line" id="estado">cargando tarjetas...</p>
+
+    <section class="tarjeta">
+      <p id="pregunta" class="pregunta"></p>
+      <p id="respuesta" class="respuesta oculta"></p>
+    </section>
+
+    <div class="botones">
+      <button id="girar">[ girar ]</button>
+      <button id="mal" class="oculta">[ ✗ otra vez ]</button>
+      <button id="bien" class="oculta">[ ✓ la sé ]</button>
+    </div>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>
