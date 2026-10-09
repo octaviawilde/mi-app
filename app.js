@@ -16,6 +16,7 @@ if (!PISTAS) document.body.classList.add("sin-pistas");
 let tarjetas = [];   // all your cards
 let cola = [];       // today's queue (the cards waiting for you)
 let actual = null;   // the card on the screen now
+let modoLibre = false;   // NEW: free practice = review anything, your boxes don't change
 let progreso = JSON.parse(localStorage.getItem("progreso")) || {};
 
 // 4. A date as "2026-10-09". fecha() = today, fecha(3) = in 3 days
@@ -75,6 +76,15 @@ function prepararCola() {
   cola = [...repasos, ...nuevas];
 }
 
+// NEW: how many cards are still waiting for you today (reviews due + new ones left)
+function pendientesHoy() {
+  const hoy = fecha();
+  const repasos = tarjetas.filter(t => progreso[t.id] && (progreso[t.id].proxima || hoy) <= hoy).length;
+  const nuevasHoy = Object.values(progreso).filter(p => p.primera === hoy).length;
+  const sinVer = tarjetas.filter(t => !progreso[t.id]).length;
+  return repasos + Math.min(sinVer, Math.max(0, NUEVAS_POR_DIA - nuevasHoy));
+}
+
 // 7. A card is "learned" when it reaches box 3 (right on 2 different days)
 function aprendidas() {
   return Object.values(progreso).filter(p => (p.caja || 1) >= 3).length;
@@ -82,18 +92,26 @@ function aprendidas() {
 
 // 8. Show the next card in the queue (or "done!")
 function siguiente() {
-  escribir(estado, `para hoy: ${cola.length} · aprendidas: ${aprendidas()}/${tarjetas.length}`, "for today · learned");
+  if (cola.length === 0) modoLibre = false;   // the end of free practice = back to normal
+
+  if (modoLibre) {
+    escribir(estado, `práctica libre: ${cola.length} · tus cajas no cambian`, "free practice · your boxes don't change");
+  } else {
+    escribir(estado, `para hoy: ${cola.length} · aprendidas: ${aprendidas()}/${tarjetas.length}`, "for today · learned");
+  }
 
   if (cola.length === 0) {
     escribir(pregunta, "✓ todo hecho por hoy", "all done for today");
-    escribir(respuesta, "vuelve mañana_", "come back tomorrow");
+    escribir(respuesta, "¿quieres más?_", "want more?");
     respuesta.classList.remove("oculta");
     botonGirar.classList.add("oculta");
     botonBien.classList.add("oculta");
     botonMal.classList.add("oculta");
+    extra.classList.remove("oculta");   // NEW: show [ + 5 nuevas ] [ práctica libre ]
     return;   // stop here: nothing else to show
   }
 
+  extra.classList.add("oculta");
   actual = cola[0];   // the first card in the queue
   escribir(pregunta, actual.es);   // no hint here: that would give away the answer!
   escribir(respuesta, actual.en + "\n" + actual.ejemplo);
@@ -119,7 +137,15 @@ function guardar(laSe) {
   p.caja = p.caja || 1;
   cola.shift();   // take this card off the front of the queue
 
-  if (laSe) {
+  if (modoLibre) {
+    // NEW: free practice only counts ✓ / ✗, it doesn't move the card between boxes
+    if (laSe) {
+      p.bien++;
+    } else {
+      p.mal++;
+      cola.push(actual);
+    }
+  } else if (laSe) {
     p.bien++;
     p.caja = Math.min(p.caja + 1, 5);
     p.proxima = fecha(DIAS[p.caja]);
@@ -136,10 +162,42 @@ function guardar(laSe) {
   siguiente();
 }
 
+// NEW: when today's cards are done, two ways to keep going
+const extra = document.querySelector("#extra");
+
+// + 5 new cards (they join your boxes like normal new cards)
+function masNuevas() {
+  const nuevas = tarjetas.filter(t => !progreso[t.id]).slice(0, 5);
+  if (nuevas.length === 0) {
+    escribir(estado, "¡ya has visto todas tus tarjetas!", "you've already seen all your cards!");
+    return;
+  }
+  modoLibre = false;
+  cola = nuevas;
+  siguiente();
+}
+
+// Free practice: 20 cards you've already seen, the hardest first
+function practicaLibre() {
+  const vistas = tarjetas.filter(t => progreso[t.id]);
+  if (vistas.length === 0) {
+    escribir(estado, "todavía no has visto ninguna tarjeta", "you haven't seen any cards yet");
+    return;
+  }
+  const dificultad = t => progreso[t.id].mal - progreso[t.id].bien;   // more ✗ = harder
+  vistas.sort(() => Math.random() - 0.5);                     // shuffle first...
+  vistas.sort((x, y) => dificultad(y) - dificultad(x));       // ...then hardest first
+  modoLibre = true;
+  cola = vistas.slice(0, 20);
+  siguiente();
+}
+
 // 11. When a button is tapped, run a function
 botonGirar.addEventListener("click", girar);
 botonBien.addEventListener("click", () => guardar(true));
 botonMal.addEventListener("click", () => guardar(false));
+document.querySelector("#mas-nuevas").addEventListener("click", masNuevas);
+document.querySelector("#libre").addEventListener("click", practicaLibre);
 
 // ---------- 12. Backup: export / import ----------
 const botonExportar = document.querySelector("#exportar");
@@ -298,7 +356,7 @@ function dibujarProgreso() {
   const datos = [
     [aprendidasTotal, "aprendidas", "learned"],
     [vistasTotal, "vistas", "seen"],
-    [cola.length, "para hoy", "for today"],
+    [pendientesHoy(), "para hoy", "for today"],
   ];
   for (const [numero, es, en] of datos) {
     const dato = crear("div", "dato");
@@ -373,8 +431,8 @@ function dibujarHoy() {
     let hecha = marcadas.includes(tarea.tipo);
     let texto = tarea.texto;
     if (tarea.tipo === "tarjetas") {   // the app knows this one by itself
-      hecha = cola.length === 0;
-      texto = `${tarea.texto} (${cola.length} para hoy)`;
+      hecha = pendientesHoy() === 0;
+      texto = `${tarea.texto} (${pendientesHoy()} para hoy)`;
     }
     const li = document.createElement("li");   // create a new list item
     escribir(li, `${hecha ? "[x]" : "[ ]"} ${texto}`, tarea.en);

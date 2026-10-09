@@ -109,6 +109,11 @@ button:active {
   gap: 12px;
 }
 
+/* the two "want more?" buttons: one per line, so the text fits on a phone */
+#extra {
+  flex-direction: column;
+}
+
 /* ---------- Today screen ---------- */
 .saludo {
   color: var(--verde);
