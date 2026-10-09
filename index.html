@@ -18,7 +18,10 @@
 <body>
   <!-- The text you see is Spanish; data-hint holds the small English hint shown under it -->
   <main>
-    <p class="prompt">&gt; hola<span id="name"></span><span class="cursor">_</span></p>
+    <div class="top">
+      <p class="prompt">&gt; hola<span id="name"></span><span class="cursor">_</span></p>
+      <button id="nav-settings" class="gear" data-hint="settings">⚙</button>
+    </div>
 
     <nav class="menu">
       <button id="nav-today" class="active" data-hint="today">hoy</button>
@@ -74,35 +77,8 @@
       </div>
     </div>
 
-    <!-- Profe's chat with AI: send a sentence from your life, ask anything -->
-    <div id="screen-profe" class="hidden">
-      <div id="talk" class="chat"></div>
-      <div class="chat-compose">
-        <input id="talk-input" class="text-input" type="text" autocomplete="off" autocorrect="off"
-               spellcheck="false" enterkeyhint="send" placeholder="escribe a Profe…">
-        <button id="talk-send" data-hint="send">→</button>
-      </div>
-      <button id="talk-new" class="link" data-hint="new conversation (Profe keeps its notes about you)">↺ nueva conversación</button>
-    </div>
-
-    <!-- The first meeting with Profe: the interview -->
-    <div id="screen-interview" class="hidden">
-      <div id="chat" class="chat"></div>
-      <div id="chat-compose" class="chat-compose hidden">
-        <input id="chat-input" class="text-input" type="text" autocomplete="off" autocorrect="off"
-               spellcheck="false" enterkeyhint="send">
-        <button id="chat-send" data-hint="send">→</button>
-      </div>
-      <div id="choices" class="choices"></div>
-    </div>
-
-    <div id="screen-progress" class="hidden">
-      <div id="report" class="report"></div>
-
-      <!-- Your map: where you are on the CEFR levels (A1 → C2) -->
-      <h2 class="heading" data-hint="your map: the levels from beginner (A1) to mastery (C2)">tu mapa</h2>
-      <div id="map" class="map"></div>
-
+    <!-- ⚙ Settings: you and the app (not your learning, that's in "progreso") -->
+    <div id="screen-settings" class="hidden">
       <!-- Your profile: what Profe knows about you -->
       <h2 class="heading" data-hint="your profile: what Profe knows about you">tu ficha</h2>
       <div id="profile" class="profile"></div>
@@ -143,6 +119,37 @@
         <button id="update" data-hint="check for updates">↻ actualizar</button>
         <span id="version"></span>
       </p>
+    </div>
+
+    <!-- Profe's chat with AI: send a sentence from your life, ask anything -->
+    <div id="screen-profe" class="hidden">
+      <div id="talk" class="chat"></div>
+      <div class="chat-compose">
+        <input id="talk-input" class="text-input" type="text" autocomplete="off" autocorrect="off"
+               spellcheck="false" enterkeyhint="send" placeholder="escribe a Profe…">
+        <button id="talk-send" data-hint="send">→</button>
+      </div>
+      <button id="talk-new" class="link" data-hint="new conversation (Profe keeps its notes about you)">↺ nueva conversación</button>
+    </div>
+
+    <!-- The first meeting with Profe: the interview -->
+    <div id="screen-interview" class="hidden">
+      <div id="chat" class="chat"></div>
+      <div id="chat-compose" class="chat-compose hidden">
+        <input id="chat-input" class="text-input" type="text" autocomplete="off" autocorrect="off"
+               spellcheck="false" enterkeyhint="send">
+        <button id="chat-send" data-hint="send">→</button>
+      </div>
+      <div id="choices" class="choices"></div>
+    </div>
+
+    <div id="screen-progress" class="hidden">
+      <div id="report" class="report"></div>
+
+      <!-- Your map: where you are on the CEFR levels (A1 → C2) -->
+      <h2 class="heading" data-hint="your map: the levels from beginner (A1) to mastery (C2)">tu mapa</h2>
+      <div id="map" class="map"></div>
+
     </div>
   </main>
   <script src="app.js"></script>

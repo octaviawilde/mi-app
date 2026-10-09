@@ -8,7 +8,7 @@
 // The text the learner SEES is Spanish (with small English hints): that's content, not code.
 
 // ---------- 1. Settings (change these numbers whenever you like) ----------
-const VERSION = "1.9";                      // change it every time you publish
+const VERSION = "1.10";                      // change it every time you publish
 const NEW_PER_DAY = 15;                     // new cards per day (when the profile doesn't say)
 const BOX_DAYS = [0, 0, 1, 3, 7, 14];       // days before a card comes back, by box (1–5)
 const NEW_PER_MINUTES = { 5: 5, 15: 10, 30: 15, 60: 20 };   // minutes per day (profile) → new cards per day
@@ -655,11 +655,12 @@ async function importFile() {
 $("#export").addEventListener("click", exportBackup);
 fileInput.addEventListener("change", importFile);
 
-// ---------- 11. Screens: today · review · progress · profe ----------
+// ---------- 11. Screens: today · profe · review · progress · ⚙ settings ----------
 const screens = {
   today: $("#screen-today"),
   review: $("#screen-review"),
   progress: $("#screen-progress"),
+  settings: $("#screen-settings"),     // ⚙ you and the app: profile, AI, backups, updates
   interview: $("#screen-interview"),   // meeting Profe (the first time)
   profe: $("#screen-profe"),           // chatting with Profe (needs an AI)
 };
@@ -668,6 +669,7 @@ const navButtons = {
   review: $("#nav-review"),
   progress: $("#nav-progress"),
   profe: $("#nav-profe"),
+  settings: $("#nav-settings"),
 };
 
 // Show ONE screen and hide the others. toggle(class, yes/no) adds or removes a class.
@@ -678,16 +680,21 @@ function show(name) {
   }
   // during the interview, hide the menu and the status line (calm, one thing at a time)
   $(".menu").classList.toggle("hidden", name === "interview");
-  statusLine.classList.toggle("hidden", name === "interview" || name === "profe");
+  statusLine.classList.toggle("hidden", ["interview", "profe", "settings"].includes(name));
   if (name === "progress") drawProgress();
   if (name === "today") drawToday();
   if (name === "profe") drawTalk();
+  if (name === "settings") {
+    drawProfile();      // what Profe knows about you
+    drawAiSettings();   // the AI that powers Profe
+  }
 }
 
 navButtons.today.addEventListener("click", () => show("today"));
 navButtons.review.addEventListener("click", () => show("review"));
 navButtons.progress.addEventListener("click", () => show("progress"));
 navButtons.profe.addEventListener("click", () => show("profe"));
+navButtons.settings.addEventListener("click", () => show("settings"));
 
 // ---------- 12. Progress screen ----------
 const report = $("#report");
@@ -786,8 +793,6 @@ function drawProgress() {
   report.append(ul);
 
   drawMap();       // where you are on Profe's map
-  drawProfile();   // what Profe knows about you
-  drawAiSettings();
 }
 
 // ---------- 13. Today screen (the plan comes from Profe: today.json) ----------
@@ -1539,7 +1544,7 @@ function drawTalk() {
       "To talk with you I need an AI. Connect your account and come back.", talkLog);
     const connect = make("button", "offer", "→ conectar mi IA", "connect my AI");
     connect.onclick = () => {
-      show("progress");
+      show("settings");
       $("#ai-settings").scrollIntoView({ behavior: "smooth" });
     };
     talkLog.append(connect);
@@ -1733,7 +1738,9 @@ $("#ai-save").addEventListener("click", async () => {
   ai = { provider: aiProvider.value, key: aiKey.value.trim(), model, url: aiUrl.value.trim() };
   save("ai", ai);
   if (!aiReady()) {
-    setText(aiStatus, "✗ falta la clave, el modelo o la URL", "missing key, model or URL");
+    if (!ai.key) setText(aiStatus, "✗ pega tu clave", "paste your key");
+    else if (!ai.model) setText(aiStatus, "✗ elige un modelo (↻ ver mis modelos)", "pick a model: tap ↻ to see your models");
+    else setText(aiStatus, "✗ falta la dirección (URL)", "the address (URL) is missing");
     return;
   }
   setText(aiStatus, "probando…", "testing");

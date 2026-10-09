@@ -33,6 +33,34 @@ main {
 }
 
 /* ---------- Top: prompt, menu, status line ---------- */
+/* the top line: "> hola, Octavia_" on the left, ⚙ on the right */
+.top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 18px 0;
+}
+
+.top .prompt {
+  margin: 0;
+}
+
+.gear {
+  flex: none;
+  border: none;
+  padding: 4px 0 4px 12px;
+  font-size: 22px;
+  color: var(--muted);
+}
+
+.gear.active {
+  color: var(--accent);
+}
+
+.gear[data-hint]::after {
+  display: none;   /* just the icon: no hint under it */
+}
+
 .prompt {
   color: var(--accent);
   text-shadow: 0 0 6px rgba(74, 222, 128, 0.35);

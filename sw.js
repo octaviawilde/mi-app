@@ -2,7 +2,7 @@
 // so it opens even with no internet (on the metro, in the mountains...).
 // Rule: always try the internet first (to get updates); if there's no internet, use the copy.
 
-const CACHE = "mi-app-v12";   // change the number when you want to throw away old copies
+const CACHE = "mi-app-v13";   // change the number when you want to throw away old copies
 const FILES = [
   "./", "index.html", "style.css", "app.js", "sample.json", "profe/interview.json", "profe/core.md", "profe/curriculum/es.json",
   "manifest.webmanifest", "icon-192.png", "icon-512.png", "icon-180.png",
@@ -27,8 +27,12 @@ self.addEventListener("activate", (event) => {
 // 3. Every request: internet first, then the saved copy.
 //    cache: "no-cache" = always ask the server "is there something newer?"
 //    (otherwise the phone may reuse a 10-minute-old copy from GitHub)
+//    Only the app's OWN files (same address as the app). Calls to other sites, like the AI
+//    providers, go straight to the internet, untouched: re-sending them here would lose
+//    their headers (your API key!) and they'd fail.
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
+  if (new URL(event.request.url).origin !== self.location.origin) return;
   event.respondWith(
     fetch(event.request.url, { cache: "no-cache" })
       .then((response) => {
