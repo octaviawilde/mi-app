@@ -8,7 +8,7 @@
 // The text the learner SEES is Spanish (with small English hints): that's content, not code.
 
 // ---------- 1. Settings (change these numbers whenever you like) ----------
-const VERSION = "1.11";                      // change it every time you publish
+const VERSION = "1.12";                      // change it every time you publish
 const NEW_PER_DAY = 15;                     // new cards per day (when the profile doesn't say)
 const BOX_DAYS = [0, 0, 1, 3, 7, 14];       // days before a card comes back, by box (1–5)
 const NEW_PER_MINUTES = { 5: 5, 15: 10, 30: 15, 60: 20 };   // minutes per day (profile) → new cards per day
@@ -1612,7 +1612,8 @@ const aiStatus = $("#ai-status");
 const OTHER_MODEL = "other";
 
 // What each provider's keys look like (to warn you if the box holds something else)
-const KEY_STARTS = { anthropic: "sk-ant-", openai: "sk-", gemini: "AIza", openrouter: "sk-or-" };
+// (providers change their key formats sometimes: Google keys can start with "AIza" or, newer, "AQ.")
+const KEY_STARTS = { anthropic: ["sk-ant-"], openai: ["sk-"], gemini: ["AIza", "AQ."], openrouter: ["sk-or-"] };
 
 // Keys are plain letters, numbers, - and _. Copying from a website or a note can add
 // spaces, line breaks or invisible characters: remove them all.
@@ -1629,10 +1630,10 @@ function checkKey() {
     setText(box, "");
     return;
   }
-  const start = KEY_STARTS[aiProvider.value];
+  const starts = KEY_STARTS[aiProvider.value];
   const looks = `${key.length} caracteres · ${key.slice(0, 7)}…${key.slice(-4)}`;
-  if (start && !key.startsWith(start)) {
-    setText(box, `⚠ ${looks}: una clave de ${AI_PROVIDERS[aiProvider.value].name} empieza por «${start}»`,
+  if (starts && !starts.some(start => key.startsWith(start))) {
+    setText(box, `⚠ ${looks}: una clave de ${AI_PROVIDERS[aiProvider.value].name} empieza por «${starts.join("» o «")}»`,
       "this doesn't look like a key from this provider: did the phone fill in something else? tap [ver] to check");
   } else {
     setText(box, looks, "length · start…end of your key: compare with the one you copied");
@@ -1640,6 +1641,12 @@ function checkKey() {
 }
 
 for (const id in AI_PROVIDERS) aiProvider.append(new Option(AI_PROVIDERS[id].name, id));
+
+// "gemini-3.8-flash" → 3.8 (to put the newest models first)
+function version(id) {
+  const match = id.match(/(\d+(\.\d+)?)/);
+  return match ? Number(match[1]) : 0;
+}
 
 // Ask the provider for its models. Returns [{ id, name, free }]
 async function listModels(provider, key, url) {
@@ -1672,7 +1679,8 @@ async function listModels(provider, key, url) {
     return (data.models || [])
       .filter(m => (m.supportedGenerationMethods || []).includes("generateContent"))   // models that can chat
       .filter(m => !/embedding|aqa|imagen|veo|tts|image/i.test(m.name))               // not pictures, video or voice
-      .map(m => ({ id: m.name.replace(/^models\//, ""), name: m.displayName || m.name }));
+      .map(m => ({ id: m.name.replace(/^models\//, ""), name: m.displayName || m.name }))
+      .sort((a, b) => version(b.id) - version(a.id) || a.id.localeCompare(b.id));   // newest first
   }
   if (provider === "openrouter") {
     const data = await get("https://openrouter.ai/api/v1/models", { authorization: `Bearer ${key}` });
@@ -1701,7 +1709,9 @@ function fillModels(models, wanted) {
   if (models.length === 0) aiModel.append(new Option("pega tu clave para ver tus modelos", ""));   // nothing to choose yet
   aiModel.append(new Option("✎ otro (escribir el nombre)", OTHER_MODEL));
   const ids = models.map(m => m.id);
-  const pick = [wanted, AI_PROVIDERS[aiProvider.value].model].find(id => id && ids.includes(id));
+  // Gemini: the newest stable Flash model (fast, and usually in the free tier)
+  const flash = aiProvider.value === "gemini" && ids.find(id => /flash/.test(id) && !/preview|exp|lite|thinking/.test(id));
+  const pick = [wanted, AI_PROVIDERS[aiProvider.value].model, flash].find(id => id && ids.includes(id));
   aiModel.value = pick || (models[0] ? models[0].id : "");
   showOtherBox();
 }
