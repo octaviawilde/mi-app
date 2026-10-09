@@ -466,9 +466,38 @@ function marcar(tipo) {
 
 // ---------- 16. Works offline: register the service worker (sw.js) ----------
 if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("sw.js").catch(() => {});   // if it fails, the app still works online
+  // updateViaCache "none" = always check the real sw.js, never an old saved copy
+  navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).catch(() => {});
 }
 
-// ---------- 17. Start the app ----------
+// ---------- 17. Version + updates ----------
+// Change VERSION every time you publish, so you can see on the phone which version you have.
+const VERSION = "1.0";
+document.querySelector("#version").textContent = `mi-app v${VERSION}`;
+
+// [ ↻ actualizar ]: get the newest files and restart the app
+async function actualizar() {
+  escribir(estado, "actualizando...", "updating...");
+  if ("serviceWorker" in navigator) {
+    const registro = await navigator.serviceWorker.getRegistration();
+    if (registro) await registro.update().catch(() => {});   // is there a new sw.js?
+  }
+  location.reload();
+}
+document.querySelector("#actualizar").addEventListener("click", actualizar);
+
+// iPhone home-screen apps don't really close: they sleep in the background.
+// If the app wakes up after 30+ minutes, restart it so it's fresh
+// (new version, new day, new plan). Your progress is saved, nothing is lost.
+let dormidaDesde = null;
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) {
+    dormidaDesde = Date.now();
+  } else if (dormidaDesde && Date.now() - dormidaDesde > 30 * 60 * 1000) {
+    location.reload();
+  }
+});
+
+// ---------- 18. Start the app ----------
 // At the very end, so everything above already exists when it runs.
 cargar();

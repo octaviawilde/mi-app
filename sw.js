@@ -2,7 +2,7 @@
 // so it opens even with no internet (on the metro, in the mountains...).
 // Rule: always try the internet first (to get updates); if there's no internet, use the copy.
 
-const CACHE = "mi-app-v2";   // change the number when you want to throw away old copies
+const CACHE = "mi-app-v3";   // change the number when you want to throw away old copies
 const ARCHIVOS = [
   "./", "index.html", "style.css", "app.js", "ejemplo.json",
   "manifest.webmanifest", "icono-192.png", "icono-512.png", "icono-180.png",
@@ -24,11 +24,13 @@ self.addEventListener("activate", (evento) => {
   self.clients.claim();
 });
 
-// 3. Every request: internet first, then the saved copy
+// 3. Every request: internet first, then the saved copy.
+//    cache: "no-cache" = always ask the server "is there something newer?"
+//    (otherwise the phone may reuse a 10-minute-old copy from GitHub)
 self.addEventListener("fetch", (evento) => {
   if (evento.request.method !== "GET") return;
   evento.respondWith(
-    fetch(evento.request)
+    fetch(evento.request.url, { cache: "no-cache" })
       .then((respuesta) => {
         if (respuesta.ok) {
           const copia = respuesta.clone();
