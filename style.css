@@ -1,19 +1,19 @@
 /* ---------- Colours: change them here, and the whole app changes ---------- */
 /* Rule: green is only for what matters most. Everything else is calm grey. */
 :root {
-  --fondo: #070a08;   /* background: almost black */
-  --texto: #c9d4cc;   /* normal text: soft light grey */
-  --verde: #4ade80;   /* accent: only the important things */
-  --tenue: #6b7770;   /* quiet grey: hints, secondary info */
-  --linea: #1f2a23;   /* lines and borders: barely visible */
+  --bg: #070a08;   /* background: almost black */
+  --text: #c9d4cc;   /* normal text: soft light grey */
+  --accent: #4ade80;   /* accent: only the important things */
+  --muted: #6b7770;   /* quiet grey: hints, secondary info */
+  --line: #1f2a23;   /* lines and borders: barely visible */
   --error: #f28b82;   /* soft red: only for mistakes (✗) */
 }
 
 body {
   margin: 0;
   min-height: 100vh;
-  background: var(--fondo);
-  color: var(--texto);
+  background: var(--bg);
+  color: var(--text);
   font-family: "SF Mono", Menlo, Consolas, monospace;
   font-size: 18px;
   line-height: 1.6;
@@ -27,22 +27,22 @@ main {
   margin: 0 auto;
 }
 
-/* "oculta" (hidden) must ALWAYS win, even against rules written later in this file */
-.oculta {
+/* "hidden" must ALWAYS win, even against rules written later in this file */
+.hidden {
   display: none !important;
 }
 
 /* ---------- Top: prompt, menu, status line ---------- */
 .prompt {
-  color: var(--verde);
+  color: var(--accent);
   text-shadow: 0 0 6px rgba(74, 222, 128, 0.35);
 }
 
 .cursor {
-  animation: parpadeo 1s steps(1) infinite;
+  animation: blink 1s steps(1) infinite;
 }
 
-@keyframes parpadeo {
+@keyframes blink {
   50% { opacity: 0; }
 }
 
@@ -56,16 +56,16 @@ main {
   border: none;
   border-bottom: 1px solid transparent;
   padding: 4px 0;
-  color: var(--tenue);
+  color: var(--muted);
 }
 
-.menu button.activo {
-  color: var(--verde);
-  border-bottom-color: var(--verde);
+.menu button.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
 }
 
 .line {
-  color: var(--tenue);
+  color: var(--muted);
   font-size: 14px;
   margin: 12px 0 4px;
 }
@@ -74,219 +74,219 @@ main {
 button {
   flex: 1;
   font: inherit;
-  color: var(--texto);
+  color: var(--text);
   background: transparent;
-  border: 1px solid var(--linea);
+  border: 1px solid var(--line);
   padding: 14px 8px;
   cursor: pointer;
 }
 
 button:active {
-  background: var(--verde);
-  color: var(--fondo);
+  background: var(--accent);
+  color: var(--bg);
 }
 
 /* ---------- Review: the flashcard ---------- */
-.tarjeta {
+.card {
   margin: 32px 0 24px;
   padding: 24px 16px;
-  border: 1px solid var(--linea);
+  border: 1px solid var(--line);
   min-height: 160px;
   cursor: pointer;   /* the card itself is the "flip" button */
 }
 
-.toca {
+.tap-hint {
   margin: 24px 0 0;
   font-size: 13px;
-  color: var(--tenue);
+  color: var(--muted);
 }
 
-.pregunta {
-  color: var(--verde);
+.question {
+  color: var(--accent);
   font-size: 28px;
   margin: 0 0 16px;
 }
 
-.respuesta {
+.answer {
   white-space: pre-line;
   margin: 0;
 }
 
-.botones {
+.buttons {
   display: flex;
   gap: 12px;
 }
 
 /* the 4 answers: a 2 × 2 grid, from "no idea" (top left) to "easy" (bottom right) */
-.respuestas {
+.answers {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
 }
 
-.respuestas button {
+.answers button {
   font-size: 16px;
 }
 
 /* the box on the card: small, top of the card */
-.caja {
+.box {
   margin: 0 0 8px;
   font-size: 12px;
-  color: var(--tenue);
+  color: var(--muted);
 }
 
 /* the two "want more?" buttons: one per line, so the text fits on a phone */
-#extra {
+#more {
   flex-direction: column;
 }
 
 /* ---------- Today screen ---------- */
-.saludo {
-  color: var(--verde);
+.greeting {
+  color: var(--accent);
   font-size: 22px;
   margin: 32px 0 8px;
 }
 
-.tareas {
+.tasks {
   list-style: none;
   padding: 0;
   margin: 16px 0;
 }
 
-.tareas li {
+.tasks li {
   padding: 16px 0;
-  border-bottom: 1px solid var(--linea);
+  border-bottom: 1px solid var(--line);
   cursor: pointer;
 }
 
-.tareas li.hecha {
-  color: var(--tenue);
+.tasks li.done {
+  color: var(--muted);
   text-decoration: line-through;
 }
 
 /* ---------- Progress screen ---------- */
-.informe {
+.report {
   margin: 24px 0;
   font-size: 15px;
 }
 
 /* the three big numbers at the top */
-.resumen {
+.summary {
   display: flex;
   gap: 10px;
 }
 
-.dato {
+.stat {
   flex: 1;
-  border: 1px solid var(--linea);
+  border: 1px solid var(--line);
   padding: 12px 6px;
   text-align: center;
 }
 
-.numero {
-  color: var(--verde);
+.number {
+  color: var(--accent);
   font-size: 26px;
   line-height: 1.2;
 }
 
-.etiqueta {
+.label {
   font-size: 13px;
 }
 
 /* section titles: "por tema", "puntos débiles" */
-.titulo {
-  color: var(--verde);
+.heading {
+  color: var(--accent);
   font-size: 16px;
   font-weight: normal;
   margin: 36px 0 4px;
 }
 
-.leyenda {
-  color: var(--tenue);
+.caption {
+  color: var(--muted);
   font-size: 12px;
   margin: 0 0 8px;
 }
 
 /* one row per topic: name | bar | count */
-.fila {
+.row {
   display: grid;
   grid-template-columns: 1fr auto 3.5em;
   gap: 10px;
   align-items: start;
   padding: 10px 0;
-  border-bottom: 1px solid var(--linea);
+  border-bottom: 1px solid var(--line);
 }
 
-.b-a { color: var(--verde); }                  /* █ learned */
-.b-v { color: var(--verde); opacity: 0.4; }    /* ▒ seen */
-.b-n { color: var(--tenue); opacity: 0.35; }   /* ░ new */
+.bar-learned { color: var(--accent); }                  /* █ learned */
+.bar-seen { color: var(--accent); opacity: 0.4; }    /* ▒ seen */
+.bar-new { color: var(--muted); opacity: 0.35; }   /* ░ new */
 
-.cuenta {
-  color: var(--tenue);
+.count {
+  color: var(--muted);
   font-size: 13px;
   text-align: right;
 }
 
 /* weak spots */
-.debiles {
+.weak {
   list-style: none;
   padding: 0;
   margin: 0;
 }
 
-.debiles li {
+.weak li {
   display: flex;
   gap: 14px;
   padding: 10px 0;
-  border-bottom: 1px solid var(--linea);
+  border-bottom: 1px solid var(--line);
 }
 
-.fallos {
+.misses {
   color: var(--error);
   min-width: 2.2em;
 }
 
-.vacio {
-  color: var(--tenue);
+.empty {
+  color: var(--muted);
 }
 
 /* ---------- Footer: backup ---------- */
-.pie {
+.data-tools {
   display: flex;
   gap: 12px;
   margin-top: 12px;
 }
 
-.pie button,
-.pie label {
+.data-tools button,
+.data-tools label {
   flex: 1;
   text-align: center;
   font-size: 14px;
   padding: 10px 8px;
-  color: var(--tenue);
-  border: 1px solid var(--linea);
+  color: var(--muted);
+  border: 1px solid var(--line);
   cursor: pointer;
 }
 
-/* ---------- Pistas: a small English hint under the Spanish ---------- */
-[data-pista]::after {
-  content: attr(data-pista);
+/* ---------- Hints: a small English hint under the Spanish (data-hint) ---------- */
+[data-hint]::after {
+  content: attr(data-hint);
   display: block;
   margin-top: 2px;
   font-size: 11px;
   font-style: italic;
   line-height: 1.4;
-  color: var(--tenue);
+  color: var(--muted);
   text-shadow: none;
 }
 
 /* in the task list, keep the hint out of the line-through */
-.tareas li[data-pista]::after {
+.tasks li[data-hint]::after {
   display: inline-block;
   width: 100%;
 }
 
-.sin-pistas [data-pista]::after {
+.no-hints [data-hint]::after {
   display: none;
 }
 
@@ -297,7 +297,7 @@ button:active {
   align-items: baseline;
   margin-top: 24px;
   font-size: 12px;
-  color: var(--tenue);
+  color: var(--muted);
 }
 
 .version button {
@@ -305,49 +305,49 @@ button:active {
   border: none;
   padding: 4px 0;
   font-size: 12px;
-  color: var(--tenue);
+  color: var(--muted);
 }
 
 /* ---------- Writing mode ---------- */
-.etiqueta-escribir {
+.writing-label {
   margin: 0 0 12px;
 }
 
-.entrada {
+.text-input {
   width: 100%;
   box-sizing: border-box;
   margin-top: 8px;
   padding: 12px;
   font: inherit;
   font-size: 20px;
-  color: var(--texto);
+  color: var(--text);
   background: transparent;
   border: none;
-  border-bottom: 1px solid var(--verde);
+  border-bottom: 1px solid var(--accent);
   outline: none;
-  caret-color: var(--verde);
+  caret-color: var(--accent);
 }
 
-.consejo {
+.tip {
   margin: 8px 0 0;
   font-size: 11px;
 }
 
-.resultado {
+.result {
   margin: 20px 0 8px;
   font-size: 18px;
 }
 
-.resultado.bien { color: var(--verde); }
-.resultado.casi { color: var(--texto); }
-.resultado.mal  { color: var(--error); }
+.result.good { color: var(--accent); }
+.result.almost { color: var(--text); }
+.result.bad  { color: var(--error); }
 
-.enlace {
+.link {
   display: block;
   margin: 12px auto 0;
   border: none;
   font-size: 13px;
-  color: var(--tenue);
+  color: var(--muted);
 }
 
 /* ---------- Profe's chat ---------- */
@@ -356,94 +356,94 @@ button:active {
   font-size: 16px;
 }
 
-.mensaje {
+.message {
   margin: 0 0 14px;
 }
 
-.mensaje.profe::before {
+.message.profe::before {
   content: "profe> ";
-  color: var(--verde);
+  color: var(--accent);
 }
 
-.mensaje.tu {
-  color: var(--tenue);
+.message.you {
+  color: var(--muted);
 }
 
-.mensaje.tu::before {
+.message.you::before {
   content: "tú> ";
 }
 
-/* the ficha: quiet lines, like a file printed in the terminal */
-.mensaje.ficha {
+/* the profile ("tu ficha"): quiet lines, like a file printed in the terminal */
+.message.profile-line {
   margin: 0 0 8px;
   padding-left: 12px;
-  border-left: 1px solid var(--linea);
+  border-left: 1px solid var(--line);
   font-size: 14px;
 }
 
 /* the answer buttons: small, side by side, they wrap onto new lines */
-.opciones {
+.choices {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
 }
 
-.opciones button {
+.choices button {
   flex: none;
   padding: 10px 12px;
   font-size: 15px;
   text-align: left;
 }
 
-.opciones button.elegida {
-  color: var(--verde);
-  border-color: var(--verde);
+.choices button.chosen {
+  color: var(--accent);
+  border-color: var(--accent);
 }
 
-.opciones button.listo {
+.choices button.ready {
   flex-basis: 100%;
   text-align: center;
 }
 
-.pronto {
+.soon {
   flex-basis: 100%;
   margin: 4px 0 0;
 }
 
-.chat-escribir {
+.chat-compose {
   display: flex;
   gap: 8px;
   align-items: flex-end;
   margin-bottom: 8px;
 }
 
-.chat-escribir .entrada {
+.chat-compose .text-input {
   margin: 0;
   font-size: 18px;
 }
 
-.chat-escribir button {
+.chat-compose button {
   flex: none;
   padding: 10px 16px;
 }
 
-.ficha .enlace {
+.profile .link {
   margin-top: 16px;
 }
 
-/* "← atrás": quiet, on its own line above the answers */
-.opciones button.atras {
+/* "← atrás": quiet, always the last line, under the answers */
+.choices button.back {
   order: 99;          /* always the last thing, under the answers */
   flex-basis: 100%;
   text-align: left;
   border: none;
   padding: 4px 0;
   font-size: 13px;
-  color: var(--tenue);
+  color: var(--muted);
 }
 
 /* "solo letras, por favor" / "no conozco «Dog»" */
-.aviso {
+.warning {
   flex-basis: 100%;
   margin: 0 0 4px;
   color: var(--error);

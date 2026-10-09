@@ -1,0 +1,22 @@
+[
+  { "id": 1, "es": "hola", "en": "hello", "example": "¡Hola! ¿Qué tal?", "topic": "saludos" },
+  { "id": 2, "es": "buenos días", "en": "good morning", "example": "Buenos días, señora.", "topic": "saludos" },
+  { "id": 3, "es": "¿Qué tal?", "en": "How are you?", "example": "Hola, Ana, ¿qué tal?", "topic": "saludos" },
+  { "id": 4, "es": "gracias", "en": "thank you", "example": "Muchas gracias.", "topic": "saludos" },
+  { "id": 5, "es": "por favor", "en": "please", "example": "Un café, por favor.", "topic": "saludos" },
+  { "id": 6, "es": "adiós", "en": "goodbye", "example": "¡Adiós, hasta mañana!", "topic": "saludos" },
+  { "id": 7, "es": "el agua", "en": "water", "example": "Un vaso de agua, por favor.", "topic": "comida" },
+  { "id": 8, "es": "el pan", "en": "bread", "example": "Compro pan todos los días.", "topic": "comida" },
+  { "id": 9, "es": "el café", "en": "coffee", "example": "¿Quieres un café?", "topic": "comida" },
+  { "id": 10, "es": "la fruta", "en": "fruit", "example": "Me gusta la fruta.", "topic": "comida" },
+  { "id": 11, "es": "la cuenta", "en": "the bill", "example": "La cuenta, por favor.", "topic": "comida" },
+  { "id": 12, "es": "sí / no", "en": "yes / no", "example": "Sí, gracias. No, gracias.", "topic": "básicas" },
+  { "id": 13, "es": "uno, dos, tres", "en": "one, two, three", "example": "Tengo dos hermanos.", "topic": "básicas" },
+  { "id": 14, "es": "hoy", "en": "today", "example": "Hoy es lunes.", "topic": "básicas" },
+  { "id": 15, "es": "mañana", "en": "tomorrow", "example": "Mañana tengo clase.", "topic": "básicas" },
+  { "id": 16, "es": "aquí / allí", "en": "here / there", "example": "El baño está allí.", "topic": "básicas" },
+  { "id": 17, "es": "hablar", "en": "to speak", "example": "Hablo un poco de español.", "topic": "verbos" },
+  { "id": 18, "es": "comer", "en": "to eat", "example": "Comemos a las dos.", "topic": "verbos" },
+  { "id": 19, "es": "vivir", "en": "to live", "example": "Vivo en Valencia.", "topic": "verbos" },
+  { "id": 20, "es": "querer", "en": "to want", "example": "Quiero un té.", "topic": "verbos" }
+]

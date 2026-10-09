@@ -8,98 +8,99 @@
 
   <!-- Home-screen app: name, icon and colours -->
   <link rel="manifest" href="manifest.webmanifest">
-  <link rel="icon" href="icono-192.png">
-  <link rel="apple-touch-icon" href="icono-180.png">
+  <link rel="icon" href="icon-192.png">
+  <link rel="apple-touch-icon" href="icon-180.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="mi-app">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#070a08">
 </head>
 <body>
+  <!-- The text you see is Spanish; data-hint holds the small English hint shown under it -->
   <main>
-    <p class="prompt">&gt; hola<span id="nombre"></span><span class="cursor">_</span></p>
+    <p class="prompt">&gt; hola<span id="name"></span><span class="cursor">_</span></p>
 
     <nav class="menu">
-      <button id="ver-hoy" class="activo" data-pista="today">[ hoy ]</button>
-      <button id="ver-repaso" data-pista="review">[ repasar ]</button>
-      <button id="ver-progreso" data-pista="progress">[ progreso ]</button>
+      <button id="nav-today" class="active" data-hint="today">[ hoy ]</button>
+      <button id="nav-review" data-hint="review">[ repasar ]</button>
+      <button id="nav-progress" data-hint="progress">[ progreso ]</button>
     </nav>
 
-    <p class="line" id="estado" data-pista="loading cards">cargando tarjetas...</p>
+    <p class="line" id="status" data-hint="loading cards">cargando tarjetas...</p>
 
-    <div id="pantalla-hoy">
-      <p id="saludo" class="saludo"></p>
-      <ul id="tareas" class="tareas"></ul>
-      <p id="nota-plan" class="line"></p>
+    <div id="screen-today">
+      <p id="greeting" class="greeting"></p>
+      <ul id="tasks" class="tasks"></ul>
+      <p id="plan-note" class="line"></p>
     </div>
 
-    <div id="pantalla-repaso" class="oculta">
-      <section id="tarjeta" class="tarjeta">
-        <p id="caja" class="caja"></p>
-        <p id="pregunta" class="pregunta"></p>
-        <p id="respuesta" class="respuesta oculta"></p>
-        <p id="toca" class="toca" data-pista="tap to see the answer">toca para girar</p>
+    <div id="screen-review" class="hidden">
+      <section id="card" class="card">
+        <p id="box" class="box"></p>
+        <p id="question" class="question"></p>
+        <p id="answer" class="answer hidden"></p>
+        <p id="tap-hint" class="tap-hint" data-hint="tap to see the answer">toca para girar</p>
       </section>
 
       <!-- Writing: see the English, type the Spanish (only for words you already recognise) -->
-      <section id="tarjeta-escribir" class="tarjeta oculta">
-        <p id="caja-escribir" class="caja"></p>
-        <p class="toca etiqueta-escribir" data-pista="write it in Spanish">escríbelo en español</p>
-        <p id="pregunta-escribir" class="pregunta"></p>
-        <input id="entrada" class="entrada" type="text" autocomplete="off" autocorrect="off"
+      <section id="writing-card" class="card hidden">
+        <p id="writing-box" class="box"></p>
+        <p class="tap-hint writing-label" data-hint="write it in Spanish">escríbelo en español</p>
+        <p id="writing-question" class="question"></p>
+        <input id="writing-input" class="text-input" type="text" autocomplete="off" autocorrect="off"
                autocapitalize="off" spellcheck="false" enterkeyhint="done">
-        <p class="toca consejo" data-pista="hold a vowel for its accent: á é í ó ú ñ">mantén pulsada una vocal para el acento</p>
-        <p id="resultado" class="resultado oculta"></p>
-        <p id="solucion" class="respuesta oculta"></p>
+        <p class="tap-hint tip" data-hint="hold a vowel for its accent: á é í ó ú ñ">mantén pulsada una vocal para el acento</p>
+        <p id="result" class="result hidden"></p>
+        <p id="solution" class="answer hidden"></p>
       </section>
 
-      <div id="botones-escribir" class="botones oculta">
-        <button id="accion-escribir" data-pista="check">comprobar</button>
+      <div id="writing-buttons" class="buttons hidden">
+        <button id="writing-action" data-hint="check">comprobar</button>
       </div>
-      <button id="contar-bien" class="enlace oculta" data-pista="the app was too strict? count it as correct">✓ contar como bien</button>
+      <button id="count-correct" class="link hidden" data-hint="the app was too strict? count it as correct">✓ contar como bien</button>
 
       <!-- How do you feel about this word? 4 simple answers, from "no idea" to "easy" -->
-      <div id="respuestas" class="respuestas oculta">
-        <button data-nivel="0" data-pista="I don't know it">no la sé</button>
-        <button data-nivel="1" data-pista="rings a bell">me suena</button>
-        <button data-nivel="2" data-pista="I know it">la sé</button>
-        <button data-nivel="3" data-pista="easy">¡fácil!</button>
+      <div id="answers" class="answers hidden">
+        <button data-level="0" data-hint="I don't know it">no la sé</button>
+        <button data-level="1" data-hint="rings a bell">me suena</button>
+        <button data-level="2" data-hint="I know it">la sé</button>
+        <button data-level="3" data-hint="easy">¡fácil!</button>
       </div>
 
-      <div id="extra" class="botones oculta">
-        <button id="mas-nuevas" data-pista="5 more new words">[ + 5 nuevas ]</button>
-        <button id="libre" data-pista="free practice">[ práctica libre ]</button>
+      <div id="more" class="buttons hidden">
+        <button id="more-new" data-hint="5 more new words">[ + 5 nuevas ]</button>
+        <button id="free-practice" data-hint="free practice">[ práctica libre ]</button>
       </div>
     </div>
 
-    <!-- NEW: Profe's chat (first: the interview to meet you) -->
-    <div id="pantalla-profe" class="oculta">
+    <!-- Profe's chat (first: the interview to meet you) -->
+    <div id="screen-profe" class="hidden">
       <div id="chat" class="chat"></div>
-      <div id="chat-escribir" class="chat-escribir oculta">
-        <input id="chat-entrada" class="entrada" type="text" autocomplete="off" autocorrect="off"
+      <div id="chat-compose" class="chat-compose hidden">
+        <input id="chat-input" class="text-input" type="text" autocomplete="off" autocorrect="off"
                spellcheck="false" enterkeyhint="send">
-        <button id="chat-enviar" data-pista="send">→</button>
+        <button id="chat-send" data-hint="send">→</button>
       </div>
-      <div id="opciones" class="opciones"></div>
+      <div id="choices" class="choices"></div>
     </div>
 
-    <div id="pantalla-progreso" class="oculta">
-      <div id="informe" class="informe"></div>
+    <div id="screen-progress" class="hidden">
+      <div id="report" class="report"></div>
 
-      <!-- NEW: your ficha: what Profe knows about you -->
-      <h2 class="titulo" data-pista="your profile: what Profe knows about you">tu ficha</h2>
-      <div id="ficha" class="ficha"></div>
+      <!-- Your profile: what Profe knows about you -->
+      <h2 class="heading" data-hint="your profile: what Profe knows about you">tu ficha</h2>
+      <div id="profile" class="profile"></div>
 
       <!-- Your data: things you need only sometimes, so they live here, out of the way -->
-      <h2 class="titulo" data-pista="your data">tus datos</h2>
-      <footer class="pie">
-        <button id="exportar" data-pista="save a backup">[ exportar ]</button>
-        <label for="archivo" data-pista="load a file">[ importar ]</label>
-        <input type="file" id="archivo" accept=".json,application/json" class="oculta">
+      <h2 class="heading" data-hint="your data">tus datos</h2>
+      <footer class="data-tools">
+        <button id="export" data-hint="save a backup">[ exportar ]</button>
+        <label for="file" data-hint="load a file">[ importar ]</label>
+        <input type="file" id="file" accept=".json,application/json" class="hidden">
       </footer>
 
       <p class="version">
-        <button id="actualizar" data-pista="check for updates">↻ actualizar</button>
+        <button id="update" data-hint="check for updates">↻ actualizar</button>
         <span id="version"></span>
       </p>
     </div>
