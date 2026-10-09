@@ -1,23 +1,23 @@
 {
-  "_nota": "Profe's first meeting with a new learner. Part of the Núcleo (the same for every learner). Each step: what Profe says (profe), how the learner answers (tipo: texto / uno / varios / niveles / fin), and where the answer is saved in the ficha (guarda). The app fills in {nombre}, {aprende}, {idioma}. To change the interview, change this file: no code needed.",
+  "_nota": "Profe's first meeting with a new learner. Part of the Núcleo (the same for every learner). Each step: what Profe says (profe), how the learner answers (tipo: texto / uno / varios / niveles / fin), and where the answer is saved in the ficha (guarda). The app fills in {nombre}, {aprende}, {idioma}. To change the interview, change this file: no code needed. Language flags: aprender = Profe can teach it today · pistas = hints exist today · planeado = on the plan (only these show as \"pronto\"). Text answers: validar = nombre / lugar (a shape check; a place Profe doesn't know is confirmed, not blocked).",
 
   "idiomas": {
-    "es": { "es": "español", "en": "Spanish", "aprender": true, "pistas": false },
-    "en": { "es": "inglés", "en": "English", "aprender": false, "pistas": true },
-    "it": { "es": "italiano", "en": "Italian", "aprender": false, "pistas": false },
-    "uk": { "es": "ucraniano", "en": "Ukrainian", "aprender": false, "pistas": false },
-    "ru": { "es": "ruso", "en": "Russian", "aprender": false, "pistas": false },
-    "ar": { "es": "árabe", "en": "Arabic", "aprender": false, "pistas": false },
-    "fr": { "es": "francés", "en": "French", "aprender": false, "pistas": false },
-    "de": { "es": "alemán", "en": "German", "aprender": false, "pistas": false },
-    "pt": { "es": "portugués", "en": "Portuguese", "aprender": false, "pistas": false },
-    "zh": { "es": "chino", "en": "Chinese", "aprender": false, "pistas": false },
-    "otro": { "es": "otro", "en": "other", "aprender": false, "pistas": false }
+    "es": { "es": "español", "en": "Spanish", "aprender": true, "pistas": false, "planeado": true },
+    "en": { "es": "inglés", "en": "English", "aprender": false, "pistas": true, "planeado": true },
+    "it": { "es": "italiano", "en": "Italian", "aprender": false, "pistas": false, "planeado": true },
+    "uk": { "es": "ucraniano", "en": "Ukrainian", "aprender": false, "pistas": false, "planeado": true },
+    "ru": { "es": "ruso", "en": "Russian", "aprender": false, "pistas": false, "planeado": true },
+    "ar": { "es": "árabe", "en": "Arabic", "aprender": false, "pistas": false, "planeado": false },
+    "fr": { "es": "francés", "en": "French", "aprender": false, "pistas": false, "planeado": false },
+    "de": { "es": "alemán", "en": "German", "aprender": false, "pistas": false, "planeado": false },
+    "pt": { "es": "portugués", "en": "Portuguese", "aprender": false, "pistas": false, "planeado": false },
+    "zh": { "es": "chino", "en": "Chinese", "aprender": false, "pistas": false, "planeado": false },
+    "otro": { "es": "otro", "en": "other", "aprender": false, "pistas": false, "planeado": false }
   },
 
   "pasos": [
     {
-      "id": "nombre", "tipo": "texto", "guarda": "nombre",
+      "id": "nombre", "tipo": "texto", "guarda": "nombre", "validar": "nombre",
       "profe": [
         { "es": "¡Hola! Soy Profe, tu profe de español.", "en": "Hi! I'm Profe, your Spanish teacher." },
         { "es": "Antes de empezar, quiero conocerte.", "en": "Before we start, I want to get to know you." },
@@ -92,7 +92,8 @@
       ]
     },
     {
-      "id": "ciudad", "tipo": "texto", "guarda": "ciudad", "opcional": true,
+      "id": "ciudad", "tipo": "texto", "guarda": "ciudad", "opcional": true, "validar": "lugar",
+      "conocidas": ["Valencia", "València", "Madrid", "Barcelona", "Sevilla", "Seville", "Málaga", "Bilbao", "Zaragoza", "Alicante", "Granada", "Murcia", "Palma", "Las Palmas", "Tenerife", "Valladolid", "Córdoba", "Salamanca", "San Sebastián", "Donostia", "Santander", "Oviedo", "Gijón", "A Coruña", "Vigo", "Santiago de Compostela", "Pamplona", "Castellón", "Benidorm", "Gandia", "Tarragona", "Girona", "Cádiz", "Marbella", "Toledo", "Ibiza", "Ciudad de México", "Mexico City", "Buenos Aires", "Bogotá", "Lima", "Santiago", "Caracas", "Quito", "Montevideo", "La Habana", "Havana", "Guadalajara", "Medellín", "Roma", "Rome", "Milano", "Milan", "Napoli", "Naples", "Torino", "Turin", "Firenze", "Florence", "Bologna", "Venezia", "Venice", "Palermo", "Genova", "Bari", "Kyiv", "Kiev", "Lviv", "Odesa", "Odessa", "Kharkiv", "Dnipro", "Moscú", "Moscow", "Moskva", "San Petersburgo", "Saint Petersburg", "London", "Londres", "Manchester", "Dublin", "Dublín", "New York", "Nueva York", "Los Angeles", "Miami", "Toronto", "Sydney", "París", "Paris", "Berlín", "Berlin", "Lisboa", "Lisbon", "Porto", "Amsterdam", "Bruselas", "Brussels", "Viena", "Vienna", "Varsovia", "Warsaw", "Praga", "Prague", "Manama", "Dubai", "Dubái", "Abu Dhabi", "Doha", "Riad", "Riyadh", "El Cairo", "Cairo", "Casablanca", "Beirut", "Amman", "Estambul", "Istanbul"],
       "profe": [
         { "es": "¿En qué ciudad vives?", "en": "Which city do you live in?" },
         { "es": "Así tus misiones serán en tu ciudad.", "en": "That way your missions will be in your city." }

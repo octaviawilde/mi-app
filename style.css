@@ -430,3 +430,21 @@ button:active {
 .ficha .enlace {
   margin-top: 16px;
 }
+
+/* "← atrás": quiet, on its own line above the answers */
+.opciones button.atras {
+  order: 99;          /* always the last thing, under the answers */
+  flex-basis: 100%;
+  text-align: left;
+  border: none;
+  padding: 4px 0;
+  font-size: 13px;
+  color: var(--tenue);
+}
+
+/* "solo letras, por favor" / "no conozco «Dog»" */
+.aviso {
+  flex-basis: 100%;
+  margin: 0 0 4px;
+  color: var(--error);
+}

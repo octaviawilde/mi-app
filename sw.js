@@ -2,7 +2,7 @@
 // so it opens even with no internet (on the metro, in the mountains...).
 // Rule: always try the internet first (to get updates); if there's no internet, use the copy.
 
-const CACHE = "mi-app-v7";   // change the number when you want to throw away old copies
+const CACHE = "mi-app-v8";   // change the number when you want to throw away old copies
 const ARCHIVOS = [
   "./", "index.html", "style.css", "app.js", "ejemplo.json", "profe/entrevista.json",
   "manifest.webmanifest", "icono-192.png", "icono-512.png", "icono-180.png",

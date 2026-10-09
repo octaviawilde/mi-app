@@ -693,7 +693,7 @@ if ("serviceWorker" in navigator) {
 
 // ---------- 17. Version + updates ----------
 // Change VERSION every time you publish, so you can see on the phone which version you have.
-const VERSION = "1.4";
+const VERSION = "1.5";
 document.querySelector("#version").textContent = `mi-app v${VERSION}`;
 
 // [ ↻ actualizar ]: get the newest files and restart the app
@@ -790,17 +790,40 @@ function opcionesDe(paso) {
   return paso.opciones;
 }
 
-// "pronto" (coming soon): the languages that aren't ready yet for this step
+// "pronto" (coming soon): languages that are ON THE PLAN (planeado) but not ready yet.
+// No false promises: a language that isn't planned never shows here.
 function prontoDe(paso) {
-  const todos = Object.keys(entrevista.idiomas).filter(c => c !== "otro");
+  const planeados = Object.keys(entrevista.idiomas).filter(c => entrevista.idiomas[c].planeado);
   if (paso.opciones === "aprender") {
-    return todos.filter(c => !entrevista.idiomas[c].aprender && c !== borrador.nativo);
+    return planeados.filter(c => !entrevista.idiomas[c].aprender && c !== borrador.nativo);
   }
   if (paso.opciones === "pistas") {
-    return [borrador.nativo, ...(borrador.otros || [])]
-      .filter(c => c !== borrador.aprende && c !== "otro" && entrevista.idiomas[c] && !entrevista.idiomas[c].pistas);
+    const conocidos = [borrador.nativo, ...(borrador.otros || [])];
+    return planeados.filter(c => conocidos.includes(c) && c !== borrador.aprende && !entrevista.idiomas[c].pistas);
   }
   return [];
+}
+
+// ---- Checking typed answers (buttons can't be wrong, but typing can) ----
+// Without AI, the app can't know what a word MEANS. It can check the SHAPE:
+// only letters, not too long. For places, it also knows a list of cities;
+// a place it doesn't know isn't blocked (your town may be small!), Profe just asks "are you sure?".
+const SOLO_LETRAS = /^[\p{L}][\p{L} '’.-]*$/u;   // \p{L} = any letter, in any alphabet (ñ, é, ж, ع...)
+
+function revisarTexto(paso, texto) {
+  if (texto.length > 40) return { es: "es muy largo", en: "that's too long" };
+  if (paso.validar && !SOLO_LETRAS.test(texto)) return { es: "solo letras, por favor", en: "letters only, please" };
+  return null;   // null = looks fine
+}
+
+function esConocida(paso, texto) {
+  const normal = t => sinAcentos(limpiar(t));
+  return (paso.conocidas || []).some(c => normal(c) === normal(texto));
+}
+
+// "octavia wilde" → "Octavia Wilde"
+function mayusculas(texto) {
+  return texto.replace(/(^|[\s-])(\p{L})/gu, (todo, antes, letra) => antes + letra.toUpperCase());
 }
 
 // Show the answer area for one step and WAIT until you answer.
@@ -808,19 +831,47 @@ function prontoDe(paso) {
 function esperarRespuesta(paso) {
   opciones.innerHTML = "";
   chatEscribir.classList.add("oculta");
+  if (repetir.length > 0) return Promise.resolve(repetir.shift());   // going back: replay old answers instantly
+  const antes = anterior;   // the answer you gave here before going back (or null)
+  anterior = null;
 
   return new Promise(responder => {
+    // "← atrás" (back): on every question except the first one
+    if (historial.length > 0) {
+      const atras = crear("button", "atras", "← atrás", "back");
+      atras.onclick = () => {
+        chatEscribir.classList.add("oculta");
+        chatEnviar.onclick = chatEntrada.onkeydown = null;
+        responder({ atras: true });
+      };
+      opciones.append(atras);
+    }
+
     // 1. Type an answer (your name, your city)
     if (paso.tipo === "texto") {
       chatEscribir.classList.remove("oculta");
-      chatEntrada.value = "";
+      chatEntrada.value = antes ? antes.valor : "";   // back here? your old answer is already typed
       chatEntrada.focus();
-      const enviar = () => {
-        const texto = chatEntrada.value.trim();
-        if (!texto) return;   // empty: wait for something
+      const aviso = crear("p", "leyenda aviso");
+      const terminar = texto => {
         chatEscribir.classList.add("oculta");
         chatEnviar.onclick = chatEntrada.onkeydown = null;
         responder({ valor: texto, es: texto });
+      };
+      const enviar = () => {
+        const texto = paso.validar ? mayusculas(chatEntrada.value.trim()) : chatEntrada.value.trim();
+        if (!texto) return;   // empty: wait for something
+        const problema = revisarTexto(paso, texto);
+        if (problema) {       // wrong shape: say why, and let them try again
+          escribir(aviso, "✗ " + problema.es, problema.en);
+          opciones.prepend(aviso);
+          return;
+        }
+        if (paso.validar === "lugar" && !esConocida(paso, texto)) {
+          confirmarLugar(texto, terminar);   // a place Profe doesn't know: ask, don't block
+          return;
+        }
+        terminar(texto);
       };
       chatEnviar.onclick = enviar;
       chatEntrada.onkeydown = evento => { if (evento.key === "Enter") enviar(); };
@@ -841,6 +892,7 @@ function esperarRespuesta(paso) {
     if (paso.tipo === "uno" || paso.tipo === "niveles" || paso.tipo === "fin") {
       for (const op of lista) {
         const boton = crear("button", "", op.es, op.en);
+        if (antes && antes.valor === op.valor) boton.classList.add("elegida");   // your old choice, in green
         boton.onclick = () => responder(op);
         opciones.append(boton);
       }
@@ -851,6 +903,11 @@ function esperarRespuesta(paso) {
       const elegidas = [];
       for (const op of lista) {
         const boton = crear("button", "", `[ ] ${op.es}`, op.en);
+        if (antes && antes.valor.includes(op.valor)) {   // back here? your old ticks are still there
+          elegidas.push(op);
+          escribir(boton, `[x] ${op.es}`, op.en);
+          boton.classList.add("elegida");
+        }
         boton.onclick = () => {
           const i = elegidas.indexOf(op);
           if (i === -1) elegidas.push(op); else elegidas.splice(i, 1);
@@ -876,21 +933,61 @@ function esperarRespuesta(paso) {
   });
 }
 
+// "No conozco «Dog»": two buttons, keep it or fix it
+function confirmarLugar(texto, terminar) {
+  const antes = [...opciones.children].filter(el => !el.classList.contains("aviso"));   // ← atrás, saltar: keep them for later
+  chatEscribir.classList.add("oculta");
+  opciones.innerHTML = "";
+  opciones.append(crear("p", "leyenda pronto", `no conozco «${texto}». ¿es una ciudad o un pueblo?`, `I don't know "${texto}". Is it a city or a town?`));
+  const si = crear("button", "", "sí, es mi ciudad", "yes, it's where I live");
+  si.onclick = () => terminar(texto);
+  const no = crear("button", "", "corregir", "fix it");
+  no.onclick = () => {
+    opciones.replaceChildren(...antes);   // back to the text box, with its buttons
+    chatEscribir.classList.remove("oculta");
+    chatEntrada.focus();
+  };
+  opciones.append(si, no);
+}
+
 // One step: Profe talks, you answer, the answer is shown as "tú>"
 async function preguntar(paso, mensajes = paso.profe) {
   for (const m of mensajes) {
-    await pausa(600);
+    if (repetir.length === 0) await pausa(600);   // no "typing" pause while replaying
     decir("profe", rellenar(m.es), rellenar(m.en));
   }
   const respuesta = await esperarRespuesta(paso);
   opciones.innerHTML = "";
+  if (respuesta.atras) throw ATRAS;   // jump out of the interview... and start it again, one answer shorter
+  historial.push(respuesta);
   decir("tu", respuesta.es);
   return respuesta.valor;
 }
 
+// Going back, the simple way: forget your last answer, then run the interview again
+// from the start, replaying your other answers instantly (repetir). You land on the
+// previous question. It also works when an earlier answer changes the next questions
+// (e.g. which languages Profe asks "¿Qué tal hablas...?" about).
+const ATRAS = "atrás";
+let historial = [];   // your answers, in order
+let repetir = [];     // answers waiting to be replayed
+let anterior = null;  // the answer you're going back to (shown ticked / typed again)
+
+async function conocerProfe(guardadas = []) {
+  try {
+    await entrevistar(guardadas);
+  } catch (señal) {
+    if (señal !== ATRAS) throw señal;   // a real error: don't hide it
+    anterior = historial[historial.length - 1] || null;   // the answer we're going back to
+    return conocerProfe(historial.slice(0, -1));
+  }
+}
+
 // The whole interview, step by step
-async function conocerProfe() {
+async function entrevistar(guardadas) {
   borrador = { idiomas: {} };
+  historial = [];
+  repetir = [...guardadas];
   chat.innerHTML = "";
   mostrar("profe");
 
@@ -911,7 +1008,7 @@ async function conocerProfe() {
         decir("profe", rellenar(m.es), rellenar(m.en));
       }
       for (const [es, en] of lineasFicha(borrador)) decir("ficha", es, en);
-      if (await preguntar(paso, paso.despues) === "otra") return conocerProfe();   // start again
+      if (await preguntar(paso, paso.despues) === "otra") return entrevistar([]);   // start again, from zero
       continue;
     }
 
@@ -964,7 +1061,7 @@ function dibujarFicha() {
     caja.append(crear("p", "vacio", "todavía no conoces a Profe", "you haven't met Profe yet"));
   }
   const otraVez = crear("button", "enlace", perfil ? "↺ repetir la entrevista" : "→ conocer a Profe", perfil ? "redo the interview" : "meet Profe");
-  otraVez.onclick = conocerProfe;
+  otraVez.onclick = () => conocerProfe();
   caja.append(otraVez);
 }
 
