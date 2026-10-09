@@ -6,17 +6,17 @@ const botonGirar = document.querySelector("#girar");
 const botonBien = document.querySelector("#bien");
 const botonMal = document.querySelector("#mal");
 
-// 2. NEW: settings (change these numbers whenever you like)
+// 2. Settings (change these numbers whenever you like)
 const NUEVAS_POR_DIA = 15;           // how many new cards per day
 const DIAS = [0, 0, 1, 3, 7, 14];    // days to wait before a card comes back, by box (caja 1–5)
 
 // 3. Variables: boxes that remember things while the app is open
 let tarjetas = [];   // all your cards
-let cola = [];       // NEW: today's queue (the cards waiting for you)
+let cola = [];       // today's queue (the cards waiting for you)
 let actual = null;   // the card on the screen now
 let progreso = JSON.parse(localStorage.getItem("progreso")) || {};
 
-// 4. NEW: a date as "2026-10-09". fecha() = today, fecha(3) = in 3 days
+// 4. A date as "2026-10-09". fecha() = today, fecha(3) = in 3 days
 function fecha(diasMas = 0) {
   const d = new Date();
   d.setDate(d.getDate() + diasMas);
@@ -29,9 +29,11 @@ async function cargar() {
   tarjetas = await archivo.json();
   prepararCola();
   siguiente();
+  await cargarHoy();   // NEW: Profe's plan for today
+  mostrar("hoy");      // NEW: open on the Today screen
 }
 
-// 6. NEW: today's queue = cards due for review + a few new ones
+// 6. Today's queue = cards due for review + a few new ones
 function prepararCola() {
   const hoy = fecha();
   const repasos = tarjetas.filter(t => progreso[t.id] && (progreso[t.id].proxima || hoy) <= hoy);
@@ -41,7 +43,7 @@ function prepararCola() {
   cola = [...repasos, ...nuevas];
 }
 
-// 7. NEW: a card is "learned" when it reaches box 3 (right on 2 different days)
+// 7. A card is "learned" when it reaches box 3 (right on 2 different days)
 function aprendidas() {
   return Object.values(progreso).filter(p => (p.caja || 1) >= 3).length;
 }
@@ -77,7 +79,7 @@ function girar() {
   botonMal.classList.remove("oculta");
 }
 
-// 10. NEW: move the card between boxes, then save
+// 10. Move the card between boxes, then save
 //     ✓ → next box, comes back later  ·  ✗ → back to box 1, comes back today
 function guardar(laSe) {
   const hoy = fecha();
@@ -155,12 +157,34 @@ async function importar() {
 botonExportar.addEventListener("click", exportar);
 archivoInput.addEventListener("change", importar);
 
-// ---------- 13. Progress screen ----------
-const pantallaRepaso = document.querySelector("#pantalla-repaso");
-const pantallaProgreso = document.querySelector("#pantalla-progreso");
+// ---------- 13. Screens: hoy · repasar · progreso ----------
+const pantallas = {
+  hoy: document.querySelector("#pantalla-hoy"),
+  repaso: document.querySelector("#pantalla-repaso"),
+  progreso: document.querySelector("#pantalla-progreso"),
+};
+const botonesMenu = {
+  hoy: document.querySelector("#ver-hoy"),
+  repaso: document.querySelector("#ver-repaso"),
+  progreso: document.querySelector("#ver-progreso"),
+};
+
+// Show ONE screen and hide the others. toggle(label, yes/no) adds or removes a label.
+function mostrar(nombre) {
+  for (const n in pantallas) {
+    pantallas[n].classList.toggle("oculta", n !== nombre);
+    botonesMenu[n].classList.toggle("activo", n === nombre);
+  }
+  if (nombre === "progreso") dibujarProgreso();
+  if (nombre === "hoy") dibujarHoy();
+}
+
+botonesMenu.hoy.addEventListener("click", () => mostrar("hoy"));
+botonesMenu.repaso.addEventListener("click", () => mostrar("repaso"));
+botonesMenu.progreso.addEventListener("click", () => mostrar("progreso"));
+
+// ---------- 14. Progress screen ----------
 const informe = document.querySelector("#informe");
-const botonVerRepaso = document.querySelector("#ver-repaso");
-const botonVerProgreso = document.querySelector("#ver-progreso");
 
 // Each card is "aprendida" (box 3+), "vista" (seen) or "nueva" (never seen)
 function estadoDe(t) {
@@ -180,7 +204,7 @@ function barra(lista, ancho = 10) {
   return "█".repeat(llenos) + "▒".repeat(medios) + "░".repeat(ancho - llenos - medios);
 }
 
-function mostrarProgreso() {
+function dibujarProgreso() {
   const aprendidasTotal = tarjetas.filter(t => estadoDe(t) === "aprendida").length;
   const vistasTotal = tarjetas.filter(t => estadoDe(t) !== "nueva").length;
   const lineas = [
@@ -216,18 +240,64 @@ function mostrarProgreso() {
   }
 
   informe.textContent = lineas.join("\n");
-  pantallaRepaso.classList.add("oculta");
-  pantallaProgreso.classList.remove("oculta");
-  botonVerProgreso.classList.add("activo");
-  botonVerRepaso.classList.remove("activo");
 }
 
-function mostrarRepaso() {
-  pantallaProgreso.classList.add("oculta");
-  pantallaRepaso.classList.remove("oculta");
-  botonVerRepaso.classList.add("activo");
-  botonVerProgreso.classList.remove("activo");
+// ---------- 15. Today screen (the plan comes from Profe: hoy.json) ----------
+const saludo = document.querySelector("#saludo");
+const listaTareas = document.querySelector("#tareas");
+const notaPlan = document.querySelector("#nota-plan");
+let plan = null;
+let hechas = JSON.parse(localStorage.getItem("hechas")) || {};   // e.g. { "2026-10-09": ["mision"] }
+
+async function cargarHoy() {
+  try {
+    const archivo = await fetch("hoy.json");
+    plan = await archivo.json();
+  } catch (error) {
+    plan = null;   // no plan file yet
+  }
 }
 
-botonVerProgreso.addEventListener("click", mostrarProgreso);
-botonVerRepaso.addEventListener("click", mostrarRepaso);
+function dibujarHoy() {
+  listaTareas.innerHTML = "";   // empty the list, then fill it again
+  if (!plan) {
+    saludo.textContent = "sin plan de Profe todavía_";
+    notaPlan.textContent = "";
+    return;
+  }
+  const hoy = fecha();
+  const marcadas = hechas[hoy] || [];
+  saludo.textContent = plan.saludo;
+
+  for (const tarea of plan.tareas) {
+    let hecha = marcadas.includes(tarea.tipo);
+    let texto = tarea.texto;
+    if (tarea.tipo === "tarjetas") {   // the app knows this one by itself
+      hecha = cola.length === 0;
+      texto = `${tarea.texto} (${cola.length} para hoy)`;
+    }
+    const li = document.createElement("li");   // create a new list item
+    li.textContent = `${hecha ? "[x]" : "[ ]"} ${texto}`;
+    if (hecha) li.classList.add("hecha");
+    li.addEventListener("click", () => marcar(tarea.tipo));
+    listaTareas.appendChild(li);               // put it on the page
+  }
+  notaPlan.textContent = plan.fecha === hoy ? `plan de ${plan.de} · hoy` : `plan de ${plan.de} · del ${plan.fecha}`;
+}
+
+// Tap a task: the cards one opens the review; the others tick on / off
+function marcar(tipo) {
+  if (tipo === "tarjetas") {
+    mostrar("repaso");
+    return;
+  }
+  const hoy = fecha();
+  const marcadas = hechas[hoy] || [];
+  if (marcadas.includes(tipo)) {
+    hechas[hoy] = marcadas.filter(t => t !== tipo);
+  } else {
+    hechas[hoy] = [...marcadas, tipo];
+  }
+  localStorage.setItem("hechas", JSON.stringify(hechas));
+  dibujarHoy();
+}

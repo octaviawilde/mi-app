@@ -11,13 +11,20 @@
     <p class="prompt">&gt; hola, Octavia<span class="cursor">_</span></p>
 
     <nav class="menu">
-      <button id="ver-repaso" class="activo">[ repasar ]</button>
+      <button id="ver-hoy" class="activo">[ hoy ]</button>
+      <button id="ver-repaso">[ repasar ]</button>
       <button id="ver-progreso">[ progreso ]</button>
     </nav>
 
     <p class="line" id="estado">cargando tarjetas...</p>
 
-    <div id="pantalla-repaso">
+    <div id="pantalla-hoy">
+      <p id="saludo" class="saludo"></p>
+      <ul id="tareas" class="tareas"></ul>
+      <p id="nota-plan" class="line"></p>
+    </div>
+
+    <div id="pantalla-repaso" class="oculta">
       <section class="tarjeta">
         <p id="pregunta" class="pregunta"></p>
         <p id="respuesta" class="respuesta oculta"></p>

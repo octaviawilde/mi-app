@@ -124,3 +124,26 @@ button:active {
   white-space: pre-wrap;
   margin: 32px 0;
 }
+
+/* ---------- Today screen ---------- */
+.saludo {
+  font-size: 22px;
+  margin: 32px 0 8px;
+}
+
+.tareas {
+  list-style: none;
+  padding: 0;
+  margin: 16px 0;
+}
+
+.tareas li {
+  padding: 14px 0;
+  border-bottom: 1px dashed var(--verde-suave);
+  cursor: pointer;
+}
+
+.tareas li.hecha {
+  color: var(--verde-suave);
+  text-decoration: line-through;
+}
