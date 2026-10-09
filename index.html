@@ -41,6 +41,23 @@
         <p id="toca" class="toca" data-pista="tap to see the answer">toca para girar</p>
       </section>
 
+      <!-- Writing: see the English, type the Spanish (only for words you already recognise) -->
+      <section id="tarjeta-escribir" class="tarjeta oculta">
+        <p id="caja-escribir" class="caja"></p>
+        <p class="toca etiqueta-escribir" data-pista="write it in Spanish">escríbelo en español</p>
+        <p id="pregunta-escribir" class="pregunta"></p>
+        <input id="entrada" class="entrada" type="text" autocomplete="off" autocorrect="off"
+               autocapitalize="off" spellcheck="false" enterkeyhint="done">
+        <p class="toca consejo" data-pista="hold a vowel for its accent: á é í ó ú ñ">mantén pulsada una vocal para el acento</p>
+        <p id="resultado" class="resultado oculta"></p>
+        <p id="solucion" class="respuesta oculta"></p>
+      </section>
+
+      <div id="botones-escribir" class="botones oculta">
+        <button id="accion-escribir" data-pista="check">comprobar</button>
+      </div>
+      <button id="contar-bien" class="enlace oculta" data-pista="the app was too strict? count it as correct">✓ contar como bien</button>
+
       <!-- How do you feel about this word? 4 simple answers, from "no idea" to "easy" -->
       <div id="respuestas" class="respuestas oculta">
         <button data-nivel="0" data-pista="I don't know it">no la sé</button>

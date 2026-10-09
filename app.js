@@ -17,6 +17,7 @@ if (!PISTAS) document.body.classList.add("sin-pistas");
 let tarjetas = [];   // all your cards
 let cola = [];       // today's queue (the cards waiting for you)
 let actual = null;   // the card on the screen now
+let colaEscribir = [];   // NEW: today's writing queue
 let modoLibre = false;   // NEW: free practice = review anything, your boxes don't change
 let progreso = JSON.parse(localStorage.getItem("progreso")) || {};
 
@@ -75,6 +76,7 @@ function prepararCola() {
   const cuantasNuevas = Math.max(0, NUEVAS_POR_DIA - nuevasHoy);
   const nuevas = tarjetas.filter(t => !progreso[t.id]).slice(0, cuantasNuevas);
   cola = [...repasos, ...nuevas];
+  colaEscribir = escrituraDeHoy();   // NEW
 }
 
 // NEW: how many cards are still waiting for you today (reviews due + new ones left)
@@ -83,7 +85,7 @@ function pendientesHoy() {
   const repasos = tarjetas.filter(t => progreso[t.id] && (progreso[t.id].proxima || hoy) <= hoy).length;
   const nuevasHoy = Object.values(progreso).filter(p => p.primera === hoy).length;
   const sinVer = tarjetas.filter(t => !progreso[t.id]).length;
-  return repasos + Math.min(sinVer, Math.max(0, NUEVAS_POR_DIA - nuevasHoy));
+  return repasos + Math.min(sinVer, Math.max(0, NUEVAS_POR_DIA - nuevasHoy)) + escrituraDeHoy().length;
 }
 
 // 7. A card is "learned" when it reaches box 3 (right on 2 different days)
@@ -99,6 +101,13 @@ function siguiente() {
     escribir(estado, `práctica libre: ${cola.length} · tus cajas no cambian`, "free practice · your boxes don't change");
   } else {
     escribir(estado, `para hoy: ${cola.length} · aprendidas: ${aprendidas()}/${tarjetas.length}`, "for today · learned");
+  }
+
+  // NEW: recognition done → writing practice (if there's any today)
+  ocultarEscribir();
+  if (cola.length === 0 && colaEscribir.length > 0 && !modoLibre) {
+    mostrarEscribir();
+    return;
   }
 
   if (cola.length === 0) {
@@ -180,6 +189,159 @@ function responder(nivel) {
   localStorage.setItem("progreso", JSON.stringify(progreso));
   siguiente();
 }
+
+// ---------- NEW: Writing mode (English → type the Spanish) ----------
+const ESCRIBIR_DESDE = 3;              // a word unlocks writing when its recognition box reaches 3
+const NUEVAS_ESCRITURA_POR_DIA = 10;   // how many newly unlocked words per day
+
+const tarjetaEscribir = document.querySelector("#tarjeta-escribir");
+const cajaEscribir = document.querySelector("#caja-escribir");
+const preguntaEscribir = document.querySelector("#pregunta-escribir");
+const entrada = document.querySelector("#entrada");
+const resultado = document.querySelector("#resultado");
+const solucion = document.querySelector("#solucion");
+const botonesEscribir = document.querySelector("#botones-escribir");
+const accionEscribir = document.querySelector("#accion-escribir");
+const contarBien = document.querySelector("#contar-bien");
+let actualEscribir = null;
+let nivelEscribir = null;   // the result of "comprobar", saved when you tap "siguiente"
+
+// Good for writing? (not grammar notes like "ir a + infinitivo" or long lists)
+function sePuedeEscribir(t) {
+  return !/[:+…]/.test(t.es) && t.es.length <= 40;
+}
+
+// Today's writing cards: unlocked words that are due + a few newly unlocked ones
+function escrituraDeHoy() {
+  const hoy = fecha();
+  const listas = tarjetas.filter(t => progreso[t.id] && (progreso[t.id].caja || 1) >= ESCRIBIR_DESDE && sePuedeEscribir(t));
+  const repasos = listas.filter(t => progreso[t.id].escritura && progreso[t.id].escritura.proxima <= hoy);
+  const nuevasHoy = listas.filter(t => progreso[t.id].escritura && progreso[t.id].escritura.primera === hoy).length;
+  const nuevas = listas.filter(t => !progreso[t.id].escritura).slice(0, Math.max(0, NUEVAS_ESCRITURA_POR_DIA - nuevasHoy));
+  return [...repasos, ...nuevas];
+}
+
+// Helpers for checking: "Árbol" → "arbol", "¿Dónde?" → "dónde", "el bosque" → "bosque"
+function limpiar(s) { return s.toLowerCase().replace(/[¡!¿?.,;]/g, "").replace(/\s+/g, " ").trim(); }
+function sinAcentos(s) { return s.normalize("NFD").replace(/[\u0300-\u036f]/g, ""); }
+function sinArticulo(s) { return s.replace(/^(el|la|los|las|un|una) /, ""); }
+
+// How many letters are different between two words (0 = identical)
+function distancia(a, b) {
+  const fila = Array.from({ length: b.length + 1 }, (_, i) => i);
+  for (let i = 1; i <= a.length; i++) {
+    let anterior = fila[0];
+    fila[0] = i;
+    for (let j = 1; j <= b.length; j++) {
+      const guardado = fila[j];
+      fila[j] = Math.min(fila[j] + 1, fila[j - 1] + 1, anterior + (a[i - 1] === b[j - 1] ? 0 : 1));
+      anterior = guardado;
+    }
+  }
+  return fila[b.length];
+}
+
+// Check what you wrote. Fair, not picky: 3 = perfect · 1 = almost · 0 = not yet
+function corregir(escrito, t) {
+  const e = limpiar(escrito);
+  const opciones = [limpiar(t.es), ...t.es.split("/").map(limpiar)];   // "sucio / sucia" → either one
+  if (e === "") return { nivel: 0, es: "todavía no", en: "not yet" };
+  if (opciones.includes(e)) return { nivel: 3, es: "✓ ¡perfecto!", en: "perfect!" };
+  if (opciones.some(o => sinAcentos(o) === sinAcentos(e))) {
+    return { nivel: 1, es: "~ casi: mira los acentos", en: "almost: check the accents (á é í ó ú ñ)" };
+  }
+  if (opciones.some(o => sinArticulo(o) !== o && sinArticulo(o) === e)) {
+    return { nivel: 1, es: "~ casi: falta el artículo", en: "almost: the article (el/la/los/las) is missing" };
+  }
+  if (opciones.some(o => o.length >= 5 && distancia(sinAcentos(o), sinAcentos(e)) === 1)) {
+    return { nivel: 1, es: "~ casi: una letra", en: "almost: one letter is different" };
+  }
+  return { nivel: 0, es: "✗ todavía no", en: "not yet" };
+}
+
+function ocultarEscribir() {
+  tarjetaEscribir.classList.add("oculta");
+  botonesEscribir.classList.add("oculta");
+  contarBien.classList.add("oculta");
+  document.querySelector("#tarjeta").classList.remove("oculta");
+}
+
+function mostrarEscribir() {
+  actualEscribir = colaEscribir[0];
+  nivelEscribir = null;
+  escribir(estado, `escribir: ${colaEscribir.length} · aprendidas: ${aprendidas()}/${tarjetas.length}`, "writing · learned");
+  document.querySelector("#tarjeta").classList.add("oculta");
+  respuestas.classList.add("oculta");
+  extra.classList.add("oculta");
+  tarjetaEscribir.classList.remove("oculta");
+  botonesEscribir.classList.remove("oculta");
+
+  const e = progreso[actualEscribir.id].escritura;
+  if (e) {
+    escribir(cajaEscribir, `escritura · caja ${e.caja} ${"▮".repeat(e.caja)}${"▯".repeat(5 - e.caja)}`, `writing · box ${e.caja} of 5`);
+  } else {
+    escribir(cajaEscribir, "escritura · nueva", "writing · new");
+  }
+  escribir(preguntaEscribir, actualEscribir.en);
+  entrada.value = "";
+  entrada.readOnly = false;
+  resultado.classList.add("oculta");
+  solucion.classList.add("oculta");
+  escribir(accionEscribir, "comprobar", "check");
+  entrada.focus();
+}
+
+// The big button: first "comprobar" (check), then "siguiente" (next)
+function accion() {
+  if (tarjetaEscribir.classList.contains("oculta")) return;   // not on the writing screen
+  if (nivelEscribir === null) {
+    const nota = corregir(entrada.value, actualEscribir);
+    nivelEscribir = nota.nivel;
+    entrada.readOnly = true;   // keep what you wrote visible, but locked
+    escribir(resultado, nota.es, nota.en);
+    resultado.className = "resultado " + (nota.nivel === 3 ? "bien" : nota.nivel === 1 ? "casi" : "mal");
+    escribir(solucion, actualEscribir.es + "\n" + actualEscribir.ejemplo);
+    solucion.classList.remove("oculta");
+    contarBien.classList.toggle("oculta", nota.nivel === 3);
+    escribir(accionEscribir, "siguiente →", "next");
+  } else {
+    guardarEscritura(nivelEscribir);
+  }
+}
+
+// Save the writing answer in its own 5 boxes (same rules as the cards)
+function guardarEscritura(nivel) {
+  const hoy = fecha();
+  const p = progreso[actualEscribir.id];
+  const e = p.escritura || { caja: 1, bien: 0, mal: 0, primera: hoy };
+  colaEscribir.shift();
+  if (nivel === 0) {
+    e.mal++;
+    e.caja = 1;
+    e.proxima = hoy;
+    colaEscribir.push(actualEscribir);   // try again later today
+  } else if (nivel === 1) {
+    e.mal++;
+    e.proxima = fecha(1);                // almost: same box, tomorrow
+  } else {
+    e.bien++;
+    e.caja = Math.min(e.caja + 1, 5);
+    e.proxima = fecha(DIAS[e.caja]);
+  }
+  p.escritura = e;
+  nivelEscribir = null;
+  localStorage.setItem("progreso", JSON.stringify(progreso));
+  siguiente();
+}
+
+accionEscribir.addEventListener("click", accion);
+entrada.addEventListener("keydown", (evento) => {
+  if (evento.key === "Enter") accion();   // Enter on the keyboard = the big button
+});
+contarBien.addEventListener("click", () => {
+  nivelEscribir = 3;   // you were right, the app was too strict
+  guardarEscritura(3);
+});
 
 // NEW: when today's cards are done, two ways to keep going
 const extra = document.querySelector("#extra");
@@ -386,6 +548,13 @@ function dibujarProgreso() {
   }
   informe.append(resumen);
 
+  // NEW: writing progress, one quiet line
+  const practicadas = tarjetas.filter(t => progreso[t.id] && progreso[t.id].escritura);
+  const escritas = practicadas.filter(t => progreso[t.id].escritura.caja >= 3).length;
+  const lineaEscritura = crear("p", "leyenda", `✍ escritura: ${practicadas.length} practicadas · ${escritas} aprendidas`, "writing: practised · learned");
+  lineaEscritura.style.marginTop = "16px";
+  informe.append(lineaEscritura);
+
   // 2. By topic: one row each (name | bar | count)
   informe.append(crear("h2", "titulo", "por tema", "by topic"));
   informe.append(crear("p", "leyenda", "█ aprendida · ▒ vista · ░ nueva", "learned · seen · new"));
@@ -493,7 +662,7 @@ if ("serviceWorker" in navigator) {
 
 // ---------- 17. Version + updates ----------
 // Change VERSION every time you publish, so you can see on the phone which version you have.
-const VERSION = "1.2";
+const VERSION = "1.3";
 document.querySelector("#version").textContent = `mi-app v${VERSION}`;
 
 // [ ↻ actualizar ]: get the newest files and restart the app

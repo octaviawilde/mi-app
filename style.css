@@ -307,3 +307,45 @@ button:active {
   font-size: 12px;
   color: var(--tenue);
 }
+
+/* ---------- Writing mode ---------- */
+.etiqueta-escribir {
+  margin: 0 0 12px;
+}
+
+.entrada {
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 8px;
+  padding: 12px;
+  font: inherit;
+  font-size: 20px;
+  color: var(--texto);
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--verde);
+  outline: none;
+  caret-color: var(--verde);
+}
+
+.consejo {
+  margin: 8px 0 0;
+  font-size: 11px;
+}
+
+.resultado {
+  margin: 20px 0 8px;
+  font-size: 18px;
+}
+
+.resultado.bien { color: var(--verde); }
+.resultado.casi { color: var(--texto); }
+.resultado.mal  { color: var(--error); }
+
+.enlace {
+  display: block;
+  margin: 12px auto 0;
+  border: none;
+  font-size: 13px;
+  color: var(--tenue);
+}
