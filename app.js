@@ -6,47 +6,70 @@ const botonGirar = document.querySelector("#girar");
 const botonBien = document.querySelector("#bien");
 const botonMal = document.querySelector("#mal");
 
-// 2. Variables: boxes that remember things while the app is open
-let tarjetas = [];   // all your cards
-let actual = null;   // the card on the screen now
+// 2. NEW: settings (change these numbers whenever you like)
+const NUEVAS_POR_DIA = 15;           // how many new cards per day
+const DIAS = [0, 0, 1, 3, 7, 14];    // days to wait before a card comes back, by box (caja 1–5)
 
-// 3. NEW: the app's memory on this device (localStorage)
-//    If something was saved before, load it. If not, start with an empty notebook {}.
+// 3. Variables: boxes that remember things while the app is open
+let tarjetas = [];   // all your cards
+let cola = [];       // NEW: today's queue (the cards waiting for you)
+let actual = null;   // the card on the screen now
 let progreso = JSON.parse(localStorage.getItem("progreso")) || {};
 
-// 4. Load your cards from the file cards.json
+// 4. NEW: a date as "2026-10-09". fecha() = today, fecha(3) = in 3 days
+function fecha(diasMas = 0) {
+  const d = new Date();
+  d.setDate(d.getDate() + diasMas);
+  return d.toLocaleDateString("sv");   // "sv" (Swedish) writes dates as YYYY-MM-DD
+}
+
+// 5. Load your cards, prepare today's queue, show the first card
 async function cargar() {
   const archivo = await fetch("cards.json");
   tarjetas = await archivo.json();
+  prepararCola();
   siguiente();
 }
 
-// 5. NEW: add up all your ✓ and ✗ from the memory
-function totales() {
-  let bien = 0;
-  let mal = 0;
-  for (const id in progreso) {
-    bien = bien + progreso[id].bien;
-    mal = mal + progreso[id].mal;
-  }
-  return { bien, mal };
+// 6. NEW: today's queue = cards due for review + a few new ones
+function prepararCola() {
+  const hoy = fecha();
+  const repasos = tarjetas.filter(t => progreso[t.id] && (progreso[t.id].proxima || hoy) <= hoy);
+  const nuevasHoy = Object.values(progreso).filter(p => p.primera === hoy).length;
+  const cuantasNuevas = Math.max(0, NUEVAS_POR_DIA - nuevasHoy);
+  const nuevas = tarjetas.filter(t => !progreso[t.id]).slice(0, cuantasNuevas);
+  cola = [...repasos, ...nuevas];
 }
 
-// 6. Show a random card (Spanish side only)
+// 7. NEW: a card is "learned" when it reaches box 3 (right on 2 different days)
+function aprendidas() {
+  return Object.values(progreso).filter(p => (p.caja || 1) >= 3).length;
+}
+
+// 8. Show the next card in the queue (or "done!")
 function siguiente() {
-  const numero = Math.floor(Math.random() * tarjetas.length);
-  actual = tarjetas[numero];
+  estado.textContent = `para hoy: ${cola.length} · aprendidas: ${aprendidas()}/${tarjetas.length}`;
+
+  if (cola.length === 0) {
+    pregunta.textContent = "✓ todo hecho por hoy";
+    respuesta.textContent = "vuelve mañana_";
+    respuesta.classList.remove("oculta");
+    botonGirar.classList.add("oculta");
+    botonBien.classList.add("oculta");
+    botonMal.classList.add("oculta");
+    return;   // stop here: nothing else to show
+  }
+
+  actual = cola[0];   // the first card in the queue
   pregunta.textContent = actual.es;
   respuesta.textContent = actual.en + "\n" + actual.ejemplo;
   respuesta.classList.add("oculta");
   botonGirar.classList.remove("oculta");
   botonBien.classList.add("oculta");
   botonMal.classList.add("oculta");
-  const t = totales();
-  estado.textContent = `${tarjetas.length} tarjetas · ✓ ${t.bien} · ✗ ${t.mal}`;
 }
 
-// 7. Flip: show the answer and the ✓ / ✗ buttons
+// 9. Flip: show the answer and the ✓ / ✗ buttons
 function girar() {
   respuesta.classList.remove("oculta");
   botonGirar.classList.add("oculta");
@@ -54,21 +77,32 @@ function girar() {
   botonMal.classList.remove("oculta");
 }
 
-// 8. NEW: write your answer for this card in the memory, then save it
+// 10. NEW: move the card between boxes, then save
+//     ✓ → next box, comes back later  ·  ✗ → back to box 1, comes back today
 function guardar(laSe) {
-  const p = progreso[actual.id] || { bien: 0, mal: 0 };
+  const hoy = fecha();
+  const p = progreso[actual.id] || { bien: 0, mal: 0, caja: 1, primera: hoy };
+  p.caja = p.caja || 1;
+  cola.shift();   // take this card off the front of the queue
+
   if (laSe) {
     p.bien++;
+    p.caja = Math.min(p.caja + 1, 5);
+    p.proxima = fecha(DIAS[p.caja]);
   } else {
     p.mal++;
+    p.caja = 1;
+    p.proxima = hoy;
+    cola.push(actual);   // "otra vez": it goes to the back of today's queue
   }
-  p.ultima = new Date().toISOString();   // when you last saw it
+
+  p.ultima = new Date().toISOString();
   progreso[actual.id] = p;
   localStorage.setItem("progreso", JSON.stringify(progreso));
   siguiente();
 }
 
-// 9. When a button is tapped, run a function
+// 11. When a button is tapped, run a function
 botonGirar.addEventListener("click", girar);
 botonBien.addEventListener("click", () => guardar(true));
 botonMal.addEventListener("click", () => guardar(false));
