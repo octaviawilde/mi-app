@@ -2,3 +2,6 @@
 cards.json
 today.json
 hoy.json
+
+# macOS Finder files: never needed in the project
+.DS_Store
