@@ -80,3 +80,21 @@ button:active {
   background: var(--verde);
   color: var(--fondo);
 }
+
+/* ---------- Backup: export / import ---------- */
+.pie {
+  display: flex;
+  gap: 12px;
+  margin-top: 48px;
+}
+
+.pie button,
+.pie label {
+  flex: 1;
+  text-align: center;
+  font-size: 14px;
+  padding: 10px 8px;
+  color: var(--verde-suave);
+  border: 1px solid var(--verde-suave);
+  cursor: pointer;
+}

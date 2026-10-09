@@ -108,3 +108,49 @@ botonBien.addEventListener("click", () => guardar(true));
 botonMal.addEventListener("click", () => guardar(false));
 
 cargar();
+
+// ---------- 12. Backup: export / import ----------
+const botonExportar = document.querySelector("#exportar");
+const archivoInput = document.querySelector("#archivo");
+
+// Export: put all your progress in a file and download it
+function exportar() {
+  const copia = { app: "mi-app", version: 1, fecha: fecha(), progreso: progreso };
+  const texto = JSON.stringify(copia, null, 2);
+  const blob = new Blob([texto], { type: "application/json" });
+  const enlace = document.createElement("a");
+  enlace.href = URL.createObjectURL(blob);
+  enlace.download = `mi-app-backup-${fecha()}.json`;
+  enlace.click();
+  estado.textContent = "✓ backup exportado";
+}
+
+// Import: read a backup file and MERGE it with what's on this device.
+// For each card, keep the most recent answer (the one with the latest "ultima").
+async function importar() {
+  const archivo = archivoInput.files[0];
+  if (!archivo) return;
+  try {
+    const copia = JSON.parse(await archivo.text());
+    if (!copia.progreso) throw new Error("not a backup");
+    let cambios = 0;
+    for (const id in copia.progreso) {
+      const suyo = copia.progreso[id];   // the card in the file
+      const mio = progreso[id];          // the same card on this device
+      if (!mio || (suyo.ultima || "") > (mio.ultima || "")) {
+        progreso[id] = suyo;
+        cambios++;
+      }
+    }
+    localStorage.setItem("progreso", JSON.stringify(progreso));
+    prepararCola();
+    siguiente();
+    estado.textContent = `✓ importado: ${cambios} tarjetas actualizadas`;
+  } catch (error) {
+    estado.textContent = "✗ ese archivo no es un backup de mi-app";
+  }
+  archivoInput.value = "";   // so the same file can be imported again
+}
+
+botonExportar.addEventListener("click", exportar);
+archivoInput.addEventListener("change", importar);
