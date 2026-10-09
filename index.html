@@ -11,12 +11,12 @@
     <p class="prompt">&gt; hola, Octavia<span class="cursor">_</span></p>
 
     <nav class="menu">
-      <button id="ver-hoy" class="activo">[ hoy ]</button>
-      <button id="ver-repaso">[ repasar ]</button>
-      <button id="ver-progreso">[ progreso ]</button>
+      <button id="ver-hoy" class="activo" data-pista="today">[ hoy ]</button>
+      <button id="ver-repaso" data-pista="review">[ repasar ]</button>
+      <button id="ver-progreso" data-pista="progress">[ progreso ]</button>
     </nav>
 
-    <p class="line" id="estado">cargando tarjetas...</p>
+    <p class="line" id="estado" data-pista="loading cards">cargando tarjetas...</p>
 
     <div id="pantalla-hoy">
       <p id="saludo" class="saludo"></p>
@@ -31,19 +31,19 @@
       </section>
 
       <div class="botones">
-        <button id="girar">[ girar ]</button>
-        <button id="mal" class="oculta">[ ✗ otra vez ]</button>
-        <button id="bien" class="oculta">[ ✓ la sé ]</button>
+        <button id="girar" data-pista="flip">[ girar ]</button>
+        <button id="mal" class="oculta" data-pista="again">[ ✗ otra vez ]</button>
+        <button id="bien" class="oculta" data-pista="I know it">[ ✓ la sé ]</button>
       </div>
     </div>
 
     <div id="pantalla-progreso" class="oculta">
-      <pre id="informe" class="informe"></pre>
+      <div id="informe" class="informe"></div>
     </div>
 
     <footer class="pie">
-      <button id="exportar">[ exportar ]</button>
-      <label for="archivo">[ importar ]</label>
+      <button id="exportar" data-pista="save a backup">[ exportar ]</button>
+      <label for="archivo" data-pista="load a backup">[ importar ]</label>
       <input type="file" id="archivo" accept=".json,application/json" class="oculta">
     </footer>
   </main>

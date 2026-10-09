@@ -1,15 +1,19 @@
-/* Colours in one place: change them here, and the whole app changes */
+/* ---------- Colours: change them here, and the whole app changes ---------- */
+/* Rule: green is only for what matters most. Everything else is calm grey. */
 :root {
-  --fondo: #050805;
-  --verde: #39ff6a;
-  --verde-suave: #1f8f3d;
+  --fondo: #070a08;   /* background: almost black */
+  --texto: #c9d4cc;   /* normal text: soft light grey */
+  --verde: #4ade80;   /* accent: only the important things */
+  --tenue: #6b7770;   /* quiet grey: hints, secondary info */
+  --linea: #1f2a23;   /* lines and borders: barely visible */
+  --error: #f28b82;   /* soft red: only for mistakes (✗) */
 }
 
 body {
   margin: 0;
   min-height: 100vh;
   background: var(--fondo);
-  color: var(--verde);
+  color: var(--texto);
   font-family: "SF Mono", Menlo, Consolas, monospace;
   font-size: 18px;
   line-height: 1.6;
@@ -21,13 +25,14 @@ main {
   margin: 0 auto;
 }
 
-.prompt {
-  text-shadow: 0 0 6px rgba(57, 255, 106, 0.5);
+.oculta {
+  display: none;
 }
 
-.line {
-  color: var(--verde-suave);
-  margin: 4px 0;
+/* ---------- Top: prompt, menu, status line ---------- */
+.prompt {
+  color: var(--verde);
+  text-shadow: 0 0 6px rgba(74, 222, 128, 0.35);
 }
 
 .cursor {
@@ -38,40 +43,37 @@ main {
   50% { opacity: 0; }
 }
 
-/* ---------- Day 2: the flashcard ---------- */
-.tarjeta {
-  margin: 32px 0;
-  padding: 24px 16px;
-  border: 1px solid var(--verde-suave);
-  min-height: 140px;
-}
-
-.pregunta {
-  font-size: 28px;
-  margin: 0 0 16px;
-}
-
-.respuesta {
-  color: var(--verde-suave);
-  white-space: pre-line;
-  margin: 0;
-}
-
-.oculta {
-  display: none;
-}
-
-.botones {
+.menu {
   display: flex;
-  gap: 12px;
+  gap: 16px;
 }
 
+.menu button {
+  flex: none;
+  border: none;
+  border-bottom: 1px solid transparent;
+  padding: 4px 0;
+  color: var(--tenue);
+}
+
+.menu button.activo {
+  color: var(--verde);
+  border-bottom-color: var(--verde);
+}
+
+.line {
+  color: var(--tenue);
+  font-size: 14px;
+  margin: 12px 0 4px;
+}
+
+/* ---------- Buttons ---------- */
 button {
   flex: 1;
   font: inherit;
-  color: var(--verde);
+  color: var(--texto);
   background: transparent;
-  border: 1px solid var(--verde);
+  border: 1px solid var(--linea);
   padding: 14px 8px;
   cursor: pointer;
 }
@@ -81,7 +83,141 @@ button:active {
   color: var(--fondo);
 }
 
-/* ---------- Backup: export / import ---------- */
+/* ---------- Review: the flashcard ---------- */
+.tarjeta {
+  margin: 32px 0;
+  padding: 24px 16px;
+  border: 1px solid var(--linea);
+  min-height: 140px;
+}
+
+.pregunta {
+  color: var(--verde);
+  font-size: 28px;
+  margin: 0 0 16px;
+}
+
+.respuesta {
+  white-space: pre-line;
+  margin: 0;
+}
+
+.botones {
+  display: flex;
+  gap: 12px;
+}
+
+/* ---------- Today screen ---------- */
+.saludo {
+  color: var(--verde);
+  font-size: 22px;
+  margin: 32px 0 8px;
+}
+
+.tareas {
+  list-style: none;
+  padding: 0;
+  margin: 16px 0;
+}
+
+.tareas li {
+  padding: 16px 0;
+  border-bottom: 1px solid var(--linea);
+  cursor: pointer;
+}
+
+.tareas li.hecha {
+  color: var(--tenue);
+  text-decoration: line-through;
+}
+
+/* ---------- Progress screen ---------- */
+.informe {
+  margin: 24px 0;
+  font-size: 15px;
+}
+
+/* the three big numbers at the top */
+.resumen {
+  display: flex;
+  gap: 10px;
+}
+
+.dato {
+  flex: 1;
+  border: 1px solid var(--linea);
+  padding: 12px 6px;
+  text-align: center;
+}
+
+.numero {
+  color: var(--verde);
+  font-size: 26px;
+  line-height: 1.2;
+}
+
+.etiqueta {
+  font-size: 13px;
+}
+
+/* section titles: "por tema", "puntos débiles" */
+.titulo {
+  color: var(--verde);
+  font-size: 16px;
+  font-weight: normal;
+  margin: 36px 0 4px;
+}
+
+.leyenda {
+  color: var(--tenue);
+  font-size: 12px;
+  margin: 0 0 8px;
+}
+
+/* one row per topic: name | bar | count */
+.fila {
+  display: grid;
+  grid-template-columns: 1fr auto 3.5em;
+  gap: 10px;
+  align-items: start;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--linea);
+}
+
+.b-a { color: var(--verde); }                  /* █ learned */
+.b-v { color: var(--verde); opacity: 0.4; }    /* ▒ seen */
+.b-n { color: var(--tenue); opacity: 0.35; }   /* ░ new */
+
+.cuenta {
+  color: var(--tenue);
+  font-size: 13px;
+  text-align: right;
+}
+
+/* weak spots */
+.debiles {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.debiles li {
+  display: flex;
+  gap: 14px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--linea);
+}
+
+.fallos {
+  color: var(--error);
+  min-width: 2.2em;
+}
+
+.vacio {
+  color: var(--tenue);
+}
+
+/* ---------- Footer: backup ---------- */
 .pie {
   display: flex;
   gap: 12px;
@@ -94,56 +230,29 @@ button:active {
   text-align: center;
   font-size: 14px;
   padding: 10px 8px;
-  color: var(--verde-suave);
-  border: 1px solid var(--verde-suave);
+  color: var(--tenue);
+  border: 1px solid var(--linea);
   cursor: pointer;
 }
 
-/* ---------- Menu + progress screen ---------- */
-.menu {
-  display: flex;
-  gap: 16px;
+/* ---------- Pistas: a small English hint under the Spanish ---------- */
+[data-pista]::after {
+  content: attr(data-pista);
+  display: block;
+  margin-top: 2px;
+  font-size: 11px;
+  font-style: italic;
+  line-height: 1.4;
+  color: var(--tenue);
+  text-shadow: none;
 }
 
-.menu button {
-  flex: none;
-  border: none;
-  padding: 4px 0;
-  color: var(--verde-suave);
+/* in the task list, keep the hint out of the line-through */
+.tareas li[data-pista]::after {
+  display: inline-block;
+  width: 100%;
 }
 
-.menu button.activo {
-  color: var(--verde);
-  text-decoration: underline;
-}
-
-.informe {
-  font: inherit;
-  font-size: 14px;
-  line-height: 1.5;
-  white-space: pre-wrap;
-  margin: 32px 0;
-}
-
-/* ---------- Today screen ---------- */
-.saludo {
-  font-size: 22px;
-  margin: 32px 0 8px;
-}
-
-.tareas {
-  list-style: none;
-  padding: 0;
-  margin: 16px 0;
-}
-
-.tareas li {
-  padding: 14px 0;
-  border-bottom: 1px dashed var(--verde-suave);
-  cursor: pointer;
-}
-
-.tareas li.hecha {
-  color: var(--verde-suave);
-  text-decoration: line-through;
+.sin-pistas [data-pista]::after {
+  display: none;
 }

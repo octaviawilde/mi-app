@@ -9,6 +9,8 @@ const botonMal = document.querySelector("#mal");
 // 2. Settings (change these numbers whenever you like)
 const NUEVAS_POR_DIA = 15;           // how many new cards per day
 const DIAS = [0, 0, 1, 3, 7, 14];    // days to wait before a card comes back, by box (caja 1–5)
+const PISTAS = true;                 // NEW: true = show the small English hints · false = Spanish only
+if (!PISTAS) document.body.classList.add("sin-pistas");
 
 // 3. Variables: boxes that remember things while the app is open
 let tarjetas = [];   // all your cards
@@ -21,6 +23,17 @@ function fecha(diasMas = 0) {
   const d = new Date();
   d.setDate(d.getDate() + diasMas);
   return d.toLocaleDateString("sv");   // "sv" (Swedish) writes dates as YYYY-MM-DD
+}
+
+// NEW: write Spanish on the screen + a small English hint under it.
+// The hint lives in data-pista, and the CSS shows it (style.css → "Pistas").
+function escribir(elemento, es, en) {
+  elemento.textContent = es;
+  if (en) {
+    elemento.dataset.pista = en;
+  } else {
+    delete elemento.dataset.pista;   // no hint for this text
+  }
 }
 
 // 5. Load your cards, prepare today's queue, show the first card
@@ -50,11 +63,11 @@ function aprendidas() {
 
 // 8. Show the next card in the queue (or "done!")
 function siguiente() {
-  estado.textContent = `para hoy: ${cola.length} · aprendidas: ${aprendidas()}/${tarjetas.length}`;
+  escribir(estado, `para hoy: ${cola.length} · aprendidas: ${aprendidas()}/${tarjetas.length}`, "for today · learned");
 
   if (cola.length === 0) {
-    pregunta.textContent = "✓ todo hecho por hoy";
-    respuesta.textContent = "vuelve mañana_";
+    escribir(pregunta, "✓ todo hecho por hoy", "all done for today");
+    escribir(respuesta, "vuelve mañana_", "come back tomorrow");
     respuesta.classList.remove("oculta");
     botonGirar.classList.add("oculta");
     botonBien.classList.add("oculta");
@@ -63,8 +76,8 @@ function siguiente() {
   }
 
   actual = cola[0];   // the first card in the queue
-  pregunta.textContent = actual.es;
-  respuesta.textContent = actual.en + "\n" + actual.ejemplo;
+  escribir(pregunta, actual.es);   // no hint here: that would give away the answer!
+  escribir(respuesta, actual.en + "\n" + actual.ejemplo);
   respuesta.classList.add("oculta");
   botonGirar.classList.remove("oculta");
   botonBien.classList.add("oculta");
@@ -124,7 +137,7 @@ function exportar() {
   enlace.href = URL.createObjectURL(blob);
   enlace.download = `mi-app-backup-${fecha()}.json`;
   enlace.click();
-  estado.textContent = "✓ backup exportado";
+  escribir(estado, "✓ backup exportado", "backup saved");
 }
 
 // Import: read a backup file and MERGE it with what's on this device.
@@ -147,9 +160,9 @@ async function importar() {
     localStorage.setItem("progreso", JSON.stringify(progreso));
     prepararCola();
     siguiente();
-    estado.textContent = `✓ importado: ${cambios} tarjetas actualizadas`;
+    escribir(estado, `✓ importado: ${cambios} tarjetas actualizadas`, `imported: ${cambios} cards updated`);
   } catch (error) {
-    estado.textContent = "✗ ese archivo no es un backup de mi-app";
+    escribir(estado, "✗ ese archivo no es un backup de mi-app", "that file is not a mi-app backup");
   }
   archivoInput.value = "";   // so the same file can be imported again
 }
@@ -186,6 +199,13 @@ botonesMenu.progreso.addEventListener("click", () => mostrar("progreso"));
 // ---------- 14. Progress screen ----------
 const informe = document.querySelector("#informe");
 
+// NEW: English names of the themes (for the hints)
+const TEMAS_EN = {
+  saludos: "greetings", animales: "animals", adjetivos: "adjectives", verbos: "verbs",
+  "en clase": "in class", "básicas": "basics", planes: "plans", fiesta: "party",
+  "sobre mí": "about me", tiempo: "time",
+};
+
 // Each card is "aprendida" (box 3+), "vista" (seen) or "nueva" (never seen)
 function estadoDe(t) {
   const p = progreso[t.id];
@@ -194,30 +214,53 @@ function estadoDe(t) {
   return "vista";
 }
 
-// A text bar like ██▒▒▒░░░░░  (█ learned · ▒ seen · ░ new)
+// NEW: create a piece of the page: crear("p", "titulo", "por tema", "by topic")
+function crear(etiqueta, clase, es, en) {
+  const el = document.createElement(etiqueta);
+  if (clase) el.className = clase;
+  if (es !== undefined) escribir(el, es, en);
+  return el;
+}
+
+// A bar like ██▒▒▒░░░░░ made of 3 coloured pieces (█ learned · ▒ seen · ░ new)
 function barra(lista, ancho = 10) {
   const total = lista.length;
   const a = lista.filter(t => estadoDe(t) === "aprendida").length;
   const v = lista.filter(t => estadoDe(t) === "vista").length;
   const llenos = Math.round((a / total) * ancho);
   const medios = Math.round(((a + v) / total) * ancho) - llenos;
-  return "█".repeat(llenos) + "▒".repeat(medios) + "░".repeat(ancho - llenos - medios);
+  const b = crear("span", "barra");
+  b.append(
+    crear("span", "b-a", "█".repeat(llenos)),
+    crear("span", "b-v", "▒".repeat(medios)),
+    crear("span", "b-n", "░".repeat(ancho - llenos - medios)),
+  );
+  return b;
 }
 
 function dibujarProgreso() {
+  informe.innerHTML = "";   // empty the screen, then build it again
   const aprendidasTotal = tarjetas.filter(t => estadoDe(t) === "aprendida").length;
   const vistasTotal = tarjetas.filter(t => estadoDe(t) !== "nueva").length;
-  const lineas = [
-    `aprendidas  ${aprendidasTotal}/${tarjetas.length}`,
-    `vistas      ${vistasTotal}/${tarjetas.length}`,
-    `para hoy    ${cola.length}`,
-    "",
-    "por tema",
-    "█ aprendida  ▒ vista  ░ nueva",
-  ];
 
-  // Group the cards by theme: { animales: [...], verbos: [...], ... }
-  const temas = {};
+  // 1. Three big numbers at the top
+  const resumen = crear("div", "resumen");
+  const datos = [
+    [aprendidasTotal, "aprendidas", "learned"],
+    [vistasTotal, "vistas", "seen"],
+    [cola.length, "para hoy", "for today"],
+  ];
+  for (const [numero, es, en] of datos) {
+    const dato = crear("div", "dato");
+    dato.append(crear("div", "numero", String(numero)), crear("div", "etiqueta", es, en));
+    resumen.append(dato);
+  }
+  informe.append(resumen);
+
+  // 2. By topic: one row each (name | bar | count)
+  informe.append(crear("h2", "titulo", "por tema", "by topic"));
+  informe.append(crear("p", "leyenda", "█ aprendida · ▒ vista · ░ nueva", "learned · seen · new"));
+  const temas = {};   // group the cards: { animales: [...], verbos: [...], ... }
   for (const t of tarjetas) {
     if (!temas[t.tema]) temas[t.tema] = [];
     temas[t.tema].push(t);
@@ -225,21 +268,31 @@ function dibujarProgreso() {
   for (const tema in temas) {
     const lista = temas[tema];
     const a = lista.filter(t => estadoDe(t) === "aprendida").length;
-    lineas.push(`${tema.padEnd(10)} ${barra(lista)} ${a}/${lista.length}`);
+    const fila = crear("div", "fila");
+    fila.append(
+      crear("span", "tema", tema, TEMAS_EN[tema]),
+      barra(lista),
+      crear("span", "cuenta", `${a}/${lista.length}`),
+    );
+    informe.append(fila);
   }
 
-  // Weak spots: cards you got wrong that aren't learned yet, most ✗ first
-  lineas.push("", "puntos débiles");
+  // 3. Weak spots: cards you got wrong that aren't learned yet, most ✗ first
+  informe.append(crear("h2", "titulo", "puntos débiles", "weak spots"));
   const debiles = tarjetas
     .filter(t => progreso[t.id] && progreso[t.id].mal > 0 && estadoDe(t) !== "aprendida")
     .sort((x, y) => progreso[y.id].mal - progreso[x.id].mal)
     .slice(0, 7);
-  if (debiles.length === 0) lineas.push("(ninguno todavía)");
-  for (const t of debiles) {
-    lineas.push(`✗${progreso[t.id].mal}  ${t.es} → ${t.en}`);
+  if (debiles.length === 0) {
+    informe.append(crear("p", "vacio", "ninguno todavía", "none yet"));
   }
-
-  informe.textContent = lineas.join("\n");
+  const ul = crear("ul", "debiles");
+  for (const t of debiles) {
+    const li = crear("li");
+    li.append(crear("span", "fallos", `✗${progreso[t.id].mal}`), crear("span", "palabra", t.es, t.en));
+    ul.append(li);
+  }
+  informe.append(ul);
 }
 
 // ---------- 15. Today screen (the plan comes from Profe: hoy.json) ----------
@@ -261,13 +314,13 @@ async function cargarHoy() {
 function dibujarHoy() {
   listaTareas.innerHTML = "";   // empty the list, then fill it again
   if (!plan) {
-    saludo.textContent = "sin plan de Profe todavía_";
+    escribir(saludo, "sin plan de Profe todavía_", "no plan from Profe yet");
     notaPlan.textContent = "";
     return;
   }
   const hoy = fecha();
   const marcadas = hechas[hoy] || [];
-  saludo.textContent = plan.saludo;
+  escribir(saludo, plan.saludo, plan.saludo_en);
 
   for (const tarea of plan.tareas) {
     let hecha = marcadas.includes(tarea.tipo);
@@ -277,12 +330,16 @@ function dibujarHoy() {
       texto = `${tarea.texto} (${cola.length} para hoy)`;
     }
     const li = document.createElement("li");   // create a new list item
-    li.textContent = `${hecha ? "[x]" : "[ ]"} ${texto}`;
+    escribir(li, `${hecha ? "[x]" : "[ ]"} ${texto}`, tarea.en);
     if (hecha) li.classList.add("hecha");
     li.addEventListener("click", () => marcar(tarea.tipo));
     listaTareas.appendChild(li);               // put it on the page
   }
-  notaPlan.textContent = plan.fecha === hoy ? `plan de ${plan.de} · hoy` : `plan de ${plan.de} · del ${plan.fecha}`;
+  if (plan.fecha === hoy) {
+    escribir(notaPlan, `plan de ${plan.de} · hoy`, `plan from ${plan.de} · today`);
+  } else {
+    escribir(notaPlan, `plan de ${plan.de} · del ${plan.fecha}`, `plan from ${plan.de} · from ${plan.fecha}`);
+  }
 }
 
 // Tap a task: the cards one opens the review; the others tick on / off
