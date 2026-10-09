@@ -495,3 +495,30 @@ button:active {
 .ai-settings .buttons {
   margin-top: 12px;
 }
+
+/* ---------- Your map ---------- */
+.levels {
+  margin: 4px 0 4px;
+  color: var(--muted);
+  font-size: 15px;
+}
+
+.levels .here {
+  color: var(--accent);
+}
+
+.map .now {
+  margin: 8px 0 10px;
+  font-size: 15px;
+  color: var(--accent);
+}
+
+/* the modules of your level: smaller rows than the topics above */
+.map .row {
+  padding: 6px 0;
+  font-size: 14px;
+}
+
+.done-step {
+  color: var(--accent);
+}

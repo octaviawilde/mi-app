@@ -2,9 +2,9 @@
 // so it opens even with no internet (on the metro, in the mountains...).
 // Rule: always try the internet first (to get updates); if there's no internet, use the copy.
 
-const CACHE = "mi-app-v10";   // change the number when you want to throw away old copies
+const CACHE = "mi-app-v11";   // change the number when you want to throw away old copies
 const FILES = [
-  "./", "index.html", "style.css", "app.js", "sample.json", "profe/interview.json", "profe/core.md",
+  "./", "index.html", "style.css", "app.js", "sample.json", "profe/interview.json", "profe/core.md", "profe/curriculum/es.json",
   "manifest.webmanifest", "icon-192.png", "icon-512.png", "icon-180.png",
 ];
 

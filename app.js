@@ -2,13 +2,13 @@
 // Plain HTML + CSS + JavaScript, no build tools. Read it top to bottom:
 //   1 settings · 2 page elements + state · 3 helpers · 4 saved data (+ migration from v1.5)
 //   5 loading · 6 today's queue · 7 review cards · 8 writing · 9 more practice · 10 backup
-//   11 screens · 12 progress · 13 today · 14 Profe's interview · 15 Profe with AI (chat)
-//   16 offline + updates · 17 start
+//   11 screens · 12 progress · 13 today · 14 Profe's interview · 15 Profe's map (curriculum)
+//   16 Profe with AI (chat) · 17 offline + updates · 18 start
 // The code is in English so anyone can read it and contribute.
 // The text the learner SEES is Spanish (with small English hints): that's content, not code.
 
 // ---------- 1. Settings (change these numbers whenever you like) ----------
-const VERSION = "1.7";                      // change it every time you publish
+const VERSION = "1.8";                      // change it every time you publish
 const NEW_PER_DAY = 15;                     // new cards per day (when the profile doesn't say)
 const BOX_DAYS = [0, 0, 1, 3, 7, 14];       // days before a card comes back, by box (1–5)
 const NEW_PER_MINUTES = { 5: 5, 15: 10, 30: 15, 60: 20 };   // minutes per day (profile) → new cards per day
@@ -211,6 +211,7 @@ async function start() {
   plan = migratePlan((await loadJson("today.json")) || loadSaved("plan"));
   interview = await loadJson("profe/interview.json");
   profeCore = await loadText("profe/core.md");   // Profe's teaching method, for the AI
+  curriculum = await loadJson(`profe/curriculum/${(profile && profile.learning) || "es"}.json`);   // Profe's map
 
   applyHints();
   showName();
@@ -556,7 +557,7 @@ const fileInput = $("#file");
 // On the phone: open the share menu (Save to Files, AirDrop...). Otherwise: download it.
 async function exportBackup() {
   // your AI key is NOT in here on purpose: a backup file can end up anywhere
-  const backup = { app: "mi-app", version: 2, date: day(), progress: progress, profile: profile, profeCards: profeCards, talk: talk };
+  const backup = { app: "mi-app", version: 2, date: day(), progress: progress, profile: profile, profeCards: profeCards, talk: talk, map: map };
   const fileName = `mi-app-backup-${day()}.json`;
   const file = new File([JSON.stringify(backup, null, 2)], fileName, { type: "application/json" });
 
@@ -602,6 +603,10 @@ async function importFile() {
       save("profeCards", profeCards);
       setCards(cards.filter(c => !isFromProfe(c)));
       if (added.length) found.push(`${added.length} tarjetas de Profe`);
+    }
+    if (data.map && data.map.done) {
+      map = { ...map, ...data.map, done: { ...data.map.done, ...map.done } };   // steps done on either device stay done
+      save("map", map);
     }
     if (data.talk && data.talk.length > talk.length) {
       talk = data.talk;   // the longer conversation wins
@@ -780,6 +785,7 @@ function drawProgress() {
   }
   report.append(ul);
 
+  drawMap();       // where you are on Profe's map
   drawProfile();   // what Profe knows about you
   drawAiSettings();
 }
@@ -802,13 +808,23 @@ function basicPlan() {
   return {
     date: day(), from: "Profe", name: profile.name, basic: true,
     greeting: `¡${es}, ${profile.name}!`, greeting_en: en,
-    tasks: [{ type: "cards", text: "repasa tus tarjetas", en: "review your cards" }],
+    tasks: [
+      { type: "cards", text: "repasa tus tarjetas", en: "review your cards" },
+      ...lessonTask(),
+    ],
   };
+}
+
+// Today's lesson from your map (when the plan comes from the app, not from Victoria's bridge)
+function lessonTask() {
+  const step = curriculum && currentStep();
+  if (!step) return [];
+  return [{ type: "lesson", text: `clase con Profe: ${step.title}`, en: `lesson with Profe: ${step.review ? "review + mini-test" : step.cando}` }];
 }
 
 function drawToday() {
   taskList.innerHTML = "";   // empty the list, then fill it again
-  if (!plan && profile) plan = basicPlan();
+  if (profile && (!plan || plan.basic)) plan = basicPlan();   // the simple plan is made fresh each time
   if (!plan) {
     setText(greeting, "sin plan de Profe todavía_", "no plan from Profe yet");
     planNote.textContent = "";
@@ -826,7 +842,7 @@ function drawToday() {
       text = `${task.text} (${leftToday()} para hoy)`;
     }
     const li = make("li", isDone ? "done" : "", `${isDone ? "[x]" : "[ ]"} ${text}`, task.en);
-    li.addEventListener("click", () => tick(task.type));
+    li.addEventListener("click", () => tick(task));
     taskList.append(li);
   }
   if (plan.date === today) {
@@ -836,10 +852,17 @@ function drawToday() {
   }
 }
 
-// Tap a task: the cards one opens the review; the others tick on / off
-function tick(type) {
+// Tap a task: cards → the review; lesson → Profe (ready to start); the others tick on / off
+function tick(task) {
+  const type = task.type;
   if (type === "cards") {
     show("review");
+    return;
+  }
+  if (type === "lesson") {   // Profe marks it done on your map when you've shown you can do it
+    show("profe");
+    talkInput.value = `Quiero hacer mi lección: ${task.text.replace(/^clase con Profe: /, "")}`;
+    talkInput.focus();
     return;
   }
   const today = day();
@@ -1187,7 +1210,119 @@ function drawProfile() {
 }
 
 
-// ---------- 15. Profe with AI (the chat) ----------
+// ---------- 15. Profe's map (the curriculum) ----------
+// profe/curriculum/<language>.json: the CEFR levels A1 → C2 and what to learn at each one, in order.
+// The map is the same for every learner. YOUR position on it is saved only on this device ("map").
+let curriculum = null;
+let map = loadSaved("map") || { done: {} };   // done: { "A1.0.1": "2026-10-10", ... }
+
+// Every step of the map, in order: a lesson, or a whole module while its lessons aren't written yet
+function mapSteps() {
+  const list = [];
+  for (const level of curriculum.levels) {
+    for (const module of level.modules) {
+      if (module.lessons) {
+        for (const lesson of module.lessons) list.push({ ...lesson, level: level.id, moduleId: module.id });
+      } else {
+        list.push({ ...module, level: level.id, moduleId: module.id });
+      }
+    }
+  }
+  return list;
+}
+
+// Where you start: your level from the interview ("pre-A1" starts at A1, lesson 0).
+// The placement test will make it precise (it will set map.start).
+function startLevel() {
+  const level = map.start || (profile && profile.level);
+  return curriculum.levels.some(l => l.id === level) ? level : "A1";
+}
+
+// Your current step = the first one, from your start level on, that isn't done yet
+function currentStep() {
+  const all = mapSteps();
+  const from = all.findIndex(s => s.level === startLevel());
+  return all.slice(from).find(s => !map.done[s.id]) || null;
+}
+
+// Profe marks a step done, after you've shown you can do it
+function markDone(id) {
+  if (!mapSteps().some(s => s.id === id) || map.done[id]) return false;
+  map.done[id] = day();
+  save("map", map);
+  return true;
+}
+
+// "Buy fruit at a market in {city}" → "Buy fruit at a market in Valencia"
+function fillCity(text) {
+  return (text || "").replace(/\{city\}/g, (profile && profile.city) || "your city");
+}
+
+// For Profe (the AI): where you are on the map, and what comes next
+function mapContext() {
+  if (!curriculum) return "";
+  const all = mapSteps();
+  const step = currentStep();
+  const level = curriculum.levels.find(l => l.id === (step ? step.level : startLevel()));
+  const describe = s => [
+    `${s.id} ${s.title} (${s.en})`,
+    s.review ? "review + mini-test of the module" : `can-do: ${s.cando}`,
+    s.grammar && `grammar: ${s.grammar}`,
+    s.vocab && `vocab: ${s.vocab}`,
+    s.mission && `mission: ${fillCity(s.mission)}`,
+  ].filter(Boolean).join(" · ");
+  const lines = ["", `# Position on the map (${curriculum.framework})`];
+  lines.push(`Level ${level.id} "${level.name}" (${level.en}): ${level.summary}`);
+  lines.push(`Started at ${startLevel()} · steps done: ${Object.keys(map.done).length}`);
+  if (step) {
+    const i = all.findIndex(s => s.id === step.id);
+    lines.push(`Current step: ${describe(step)}`);
+    lines.push(`Next steps: ${all.slice(i + 1, i + 3).map(s => `${s.id} ${s.title}`).join(" · ")}`);
+  } else {
+    lines.push("The learner has finished the map.");
+  }
+  return lines.join("\n");
+}
+
+// [ progreso ] → "tu mapa": the 6 levels, the modules of your level, and your current step
+function drawMap() {
+  const box = $("#map");
+  box.innerHTML = "";
+  if (!curriculum) return;
+  const all = mapSteps();
+  const step = currentStep();
+  const levelId = step ? step.level : curriculum.levels[curriculum.levels.length - 1].id;
+
+  // A1 ✓ · A2 ● · B1 ○ … (✓ finished · ● you're here · ○ not yet)
+  const levels = make("p", "levels");
+  for (const level of curriculum.levels) {
+    const finished = all.filter(s => s.level === level.id).every(s => map.done[s.id]);
+    const mark = level.id === levelId ? "●" : finished ? "✓" : "○";
+    levels.append(make("span", level.id === levelId ? "here" : "", `${mark} ${level.id}  `));
+  }
+  box.append(levels);
+
+  const level = curriculum.levels.find(l => l.id === levelId);
+  box.append(make("p", "caption", `${level.id} · ${level.name}`, `${level.en}: ${level.summary}`));
+  if (step) {   // your current step, right under the level
+    box.append(make("p", "now", `ahora: ${step.title}`, step.review ? "now: review + mini-test" : `now: ${step.cando}`));
+  }
+
+  for (const module of level.modules) {
+    const moduleSteps = all.filter(s => s.moduleId === module.id);
+    const doneHere = moduleSteps.filter(s => map.done[s.id]).length;
+    const width = 10;
+    const full = Math.round((doneHere / moduleSteps.length) * width);
+    const bar = make("span", "bar");
+    bar.append(make("span", "bar-learned", "█".repeat(full)), make("span", "bar-new", "░".repeat(width - full)));
+    const row = make("div", "row");
+    row.append(make("span", "topic", module.title, module.en), bar, make("span", "count", `${doneHere}/${moduleSteps.length}`));
+    box.append(row);
+  }
+
+}
+
+// ---------- 16. Profe with AI (the chat) ----------
 // Profe's brain is an AI model. The app has no server: your phone talks DIRECTLY to the
 // AI provider you choose, with YOUR API key. The key is saved only on this device
 // (localStorage "ai"), it's never in a backup, and it's only sent to that provider.
@@ -1315,11 +1450,11 @@ function learnerContext() {
     `Seen words: ${seen.slice(0, 200).join(", ") || "none yet"}`,
     `Weak words: ${weak.join(", ") || "none yet"}`);
   if (plan) lines.push(`Today's plan: ${plan.tasks.map(t => t.en || t.text).join(" · ")}`);
-  return lines.join("\n");
+  return lines.join("\n") + mapContext();
 }
 
 // ---- The chat screen ----
-const ACTION = /^\s*\[\[\s*(card|go|note)\s*\|(.*)\]\]\s*$/i;
+const ACTION = /^\s*\[\[\s*(card|go|note|done)\s*\|(.*)\]\]\s*$/i;
 const GO_TO = { review: ["→ repasar", "go to review"], progress: ["→ progreso", "go to progress"], today: ["→ hoy", "go to today"] };
 
 // Show one message. Profe's action lines become buttons.
@@ -1360,6 +1495,10 @@ function showMessage(message) {
     if (type === "note" && parts[0]) {
       talkLog.append(make("p", "caption", `✎ Profe recordará: ${parts.join(" | ")}`, "Profe will remember this"));
     }
+    if (type === "done" && curriculum) {
+      const step = mapSteps().find(s => s.id === parts[0]);
+      if (step) talkLog.append(make("p", "caption done-step", `✓ completado: ${step.title}`, "a step on your map is done!"));
+    }
   }
 }
 
@@ -1373,16 +1512,20 @@ function addProfeCard(es, en, example) {
   nextCard();
 }
 
-// Profe's notes about you go into your profile (max 30, the newest win)
-function rememberNotes(content) {
-  if (!profile) return;
+// Actions that change your data, done once when Profe's answer arrives:
+// notes go into your profile (max 30, the newest win), "done" moves you forward on the map
+function applyActions(content) {
   for (const line of content.split("\n")) {
     const match = line.match(ACTION);
-    if (match && match[1].toLowerCase() === "note") {
-      profile.notes = [...(profile.notes || []), match[2].trim()].slice(-30);
+    if (!match) continue;
+    const type = match[1].toLowerCase();
+    const value = match[2].trim();
+    if (type === "note" && profile) {
+      profile.notes = [...(profile.notes || []), value].slice(-30);
       profile.updated = new Date().toISOString();
       save("profile", profile);
     }
+    if (type === "done" && curriculum) markDone(value.split("|")[0].trim());
   }
 }
 
@@ -1431,7 +1574,7 @@ async function sendToProfe() {
     const reply = { role: "assistant", content: answer };
     talk.push(reply);
     save("talk", talk.slice(-200));
-    rememberNotes(answer);
+    applyActions(answer);
     typing.remove();
     showMessage(reply);
   } catch (error) {
@@ -1507,7 +1650,7 @@ $("#ai-forget").addEventListener("click", () => {
   setText(aiStatus, "clave borrada de este teléfono", "key deleted from this phone");
 });
 
-// ---------- 16. Offline + updates ----------
+// ---------- 17. Offline + updates ----------
 // The service worker (sw.js) keeps a copy of the app, so it opens with no internet.
 if ("serviceWorker" in navigator) {
   // updateViaCache "none" = always check the real sw.js, never an old saved copy
@@ -1539,6 +1682,6 @@ document.addEventListener("visibilitychange", () => {
   }
 });
 
-// ---------- 17. Start the app ----------
+// ---------- 18. Start the app ----------
 // At the very end, so everything above already exists when it runs.
 start();

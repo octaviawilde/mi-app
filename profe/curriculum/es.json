@@ -1,0 +1,190 @@
+{
+  "_note": "Profe's map for Spanish. The same for every learner: what each CEFR level means and what to teach, in order. Levels contain modules; a module has lessons (detailed) or, until its lessons are written, its own can-do (an outline). A lesson's {city} is filled with the learner's city. Our own wording, aligned with the sources below. Lessons are written level by level: A1 first (from the first Profe's real course), then A2 → C2.",
+  "language": "es",
+  "framework": "CEFR (Pre-A1 is covered by A1, module 0; 'native' is not a CEFR level: C2 is the top)",
+  "sources": [
+    "Council of Europe: Common European Framework of Reference for Languages (CEFR), Companion Volume, 2020",
+    "Instituto Cervantes: Plan Curricular del Instituto Cervantes (PCIC), Niveles de referencia para el español"
+  ],
+  "certificates": "The app estimates a level. Official Spanish certificates: DELE and SIELE (Instituto Cervantes).",
+  "levels": [
+    {
+      "id": "A1",
+      "name": "Acceso",
+      "en": "beginner",
+      "summary": "Understands and uses familiar everyday expressions and very basic phrases. Can introduce themselves, ask and answer simple personal questions, and interact if the other person speaks slowly.",
+      "modules": [
+        {
+          "id": "A1.0",
+          "title": "Fundamentos",
+          "en": "foundations",
+          "lessons": [
+            { "id": "A1.0.1", "title": "Sonidos del español", "en": "the sounds of Spanish", "cando": "read any Spanish word aloud", "grammar": "vowels a-e-i-o-u; c/z, g/j, ll/y, ñ, r/rr, silent h; stress and written accents", "vocab": "the alphabet", "mission": "Read 5 street names in {city} aloud" },
+            { "id": "A1.0.2", "title": "Números 0–100", "en": "numbers 0–100", "cando": "say prices, phone numbers and my age", "grammar": "numbers; tener + años", "vocab": "numbers", "mission": "Read prices aloud in a shop" },
+            { "id": "A1.0.3", "title": "Preguntas clave", "en": "key questions", "cando": "ask the essential questions", "grammar": "question words: qué, dónde, cuánto, cuándo, cómo, por qué", "vocab": "survival phrases", "mission": "Ask a stranger: ¿Qué hora es?" },
+            { "id": "A1.0.4", "title": "Los 4 verbos esenciales", "en": "the 4 essential verbs", "cando": "say who I am, where I am, what I have and where I go", "grammar": "ser, estar, tener, ir (present)", "vocab": "basic adjectives", "mission": "" }
+          ]
+        },
+        {
+          "id": "A1.1",
+          "title": "Yo y mi vida",
+          "en": "me and my life",
+          "lessons": [
+            { "id": "A1.1.1", "title": "¡Hola! Me presento", "en": "hello! introducing myself", "cando": "introduce myself", "grammar": "ser + nationality; llamarse", "vocab": "countries, nationalities", "mission": "Introduce yourself to someone only in Spanish" },
+            { "id": "A1.1.2", "title": "¿A qué te dedicas?", "en": "what do you do?", "cando": "talk about my work and studies", "grammar": "regular present -ar/-er/-ir", "vocab": "professions", "mission": "Ask someone what they do" },
+            { "id": "A1.1.3", "title": "Mi familia", "en": "my family", "cando": "describe my family", "grammar": "possessives; ser + adjectives (agreement)", "vocab": "family, character", "mission": "Describe a family photo" },
+            { "id": "A1.1.4", "title": "¿Cómo eres?", "en": "what are you like?", "cando": "describe people", "grammar": "ser vs estar (basic); adjective agreement", "vocab": "appearance, character", "mission": "Describe someone at a café (in your head!)" },
+            { "id": "A1.1.R", "title": "Repaso + mini-test", "en": "review + mini-test", "review": true }
+          ]
+        },
+        {
+          "id": "A1.2",
+          "title": "En el bar y la cafetería",
+          "en": "at the bar and café",
+          "lessons": [
+            { "id": "A1.2.1", "title": "Un café, por favor", "en": "a coffee, please", "cando": "order a drink", "grammar": "quiero / me pone / ¿me pones?; un/una", "vocab": "café drinks (cortado, café con leche)", "mission": "Order your coffee in Spanish in {city}" },
+            { "id": "A1.2.2", "title": "¿Cuánto es?", "en": "how much is it?", "cando": "pay and ask the price", "grammar": "numbers review; ¿cuánto cuesta/es?", "vocab": "money, la cuenta", "mission": "Ask for the bill: La cuenta, por favor" },
+            { "id": "A1.2.3", "title": "De tapas", "en": "having tapas", "cando": "order food and say what I like", "grammar": "gustar (me gusta / me gustan)", "vocab": "tapas, food", "mission": "Order 2 dishes and say if you liked them" },
+            { "id": "A1.2.4", "title": "El menú del día", "en": "the set menu", "cando": "understand a menu", "grammar": "de primero, de segundo, de postre", "vocab": "dishes, drinks", "mission": "Order a full meal in Spanish" },
+            { "id": "A1.2.R", "title": "Repaso + mini-test", "en": "review + mini-test", "review": true }
+          ]
+        },
+        {
+          "id": "A1.3",
+          "title": "Mercado y compras",
+          "en": "market and shopping",
+          "lessons": [
+            { "id": "A1.3.1", "title": "En el mercado", "en": "at the market", "cando": "buy fruit and vegetables", "grammar": "quantities (un kilo de, medio, una docena); demonstratives (este/esa)", "vocab": "fruit, vegetables", "mission": "Buy fruit at a market in {city}" },
+            { "id": "A1.3.2", "title": "En el súper", "en": "at the supermarket", "cando": "find things and ask for help", "grammar": "hay vs está; ¿dónde está…?", "vocab": "supermarket sections", "mission": "Ask an employee where something is" },
+            { "id": "A1.3.3", "title": "Ropa y tallas", "en": "clothes and sizes", "cando": "shop for clothes", "grammar": "colours + agreement; ¿tiene…?; me queda grande", "vocab": "clothes, colours", "mission": "Ask for a size in a shop" },
+            { "id": "A1.3.R", "title": "Repaso + mini-test", "en": "review + mini-test", "review": true }
+          ]
+        },
+        {
+          "id": "A1.4",
+          "title": "Moverse por la ciudad",
+          "en": "getting around town",
+          "lessons": [
+            { "id": "A1.4.1", "title": "¿Dónde está…?", "en": "where is…?", "cando": "ask for and follow directions", "grammar": "estar + location; prepositions of place", "vocab": "places in the city", "mission": "Ask for directions to a landmark in {city}" },
+            { "id": "A1.4.2", "title": "Metro, bus y bici", "en": "metro, bus and bike", "cando": "use public transport", "grammar": "ir a / ir en; movement verbs", "vocab": "transport, tickets", "mission": "Buy a ticket or travel card in Spanish" },
+            { "id": "A1.4.3", "title": "¿Qué hora es?", "en": "what time is it?", "cando": "tell the time and understand schedules", "grammar": "the time; abrir / cerrar", "vocab": "hours, days, opening times", "mission": "Check when a shop opens and closes" },
+            { "id": "A1.4.R", "title": "Repaso + mini-test", "en": "review + mini-test", "review": true }
+          ]
+        },
+        {
+          "id": "A1.5",
+          "title": "Mi día a día",
+          "en": "my daily life",
+          "lessons": [
+            { "id": "A1.5.1", "title": "Mi rutina", "en": "my routine", "cando": "describe my day", "grammar": "reflexive verbs (me levanto, me ducho)", "vocab": "daily routine", "mission": "Tell Profe about your real day" },
+            { "id": "A1.5.2", "title": "Verbos que cambian", "en": "verbs that change", "cando": "use common irregular verbs", "grammar": "stem changes e→ie, o→ue, e→i", "vocab": "high-frequency verbs", "mission": "" },
+            { "id": "A1.5.3", "title": "¿Con qué frecuencia?", "en": "how often?", "cando": "say how often I do things", "grammar": "frequency adverbs; soler", "vocab": "free time", "mission": "" },
+            { "id": "A1.5.R", "title": "Repaso + mini-test", "en": "review + mini-test", "review": true }
+          ]
+        },
+        {
+          "id": "A1.6",
+          "title": "Planes y vida social",
+          "en": "plans and social life",
+          "lessons": [
+            { "id": "A1.6.1", "title": "¿Quedamos?", "en": "shall we meet?", "cando": "propose, accept or decline a plan", "grammar": "ir a + infinitive; ¿te apetece…?", "vocab": "leisure, places", "mission": "Make a plan with someone in Spanish" },
+            { "id": "A1.6.2", "title": "El tiempo", "en": "the weather", "cando": "talk about the weather", "grammar": "weather verbs; muy vs mucho", "vocab": "weather, seasons", "mission": "Make small talk about the weather" },
+            { "id": "A1.6.3", "title": "Fiestas y costumbres", "en": "festivals and customs", "cando": "understand local customs and festivals", "grammar": "se celebra; dates", "vocab": "festivals, holidays", "mission": "Find out about a local festival in {city}" }
+          ]
+        },
+        {
+          "id": "A1.7",
+          "title": "Salud y emergencias",
+          "en": "health and emergencies",
+          "lessons": [
+            { "id": "A1.7.1", "title": "En la farmacia", "en": "at the pharmacy", "cando": "explain a simple health problem", "grammar": "doler (me duele); tener que", "vocab": "body, symptoms", "mission": "Ask for something at a pharmacy" },
+            { "id": "A1.7.2", "title": "Emergencias", "en": "emergencies", "cando": "get help in an emergency", "grammar": "imperatives in fixed phrases", "vocab": "112, help phrases", "mission": "" }
+          ]
+        },
+        {
+          "id": "A1.8",
+          "title": "Contar lo que he hecho",
+          "en": "telling what I've done",
+          "lessons": [
+            { "id": "A1.8.1", "title": "¿Qué has hecho hoy?", "en": "what have you done today?", "cando": "tell what I did today", "grammar": "pretérito perfecto; hoy, esta semana", "vocab": "daily activities", "mission": "Tell Profe about your day in the past" },
+            { "id": "A1.8.2", "title": "Ya / todavía no", "en": "already / not yet", "cando": "say what I have and haven't done", "grammar": "ya / todavía no; nunca", "vocab": "experiences", "mission": "List 5 things you've done in {city}" },
+            { "id": "A1.8.R", "title": "Evaluación final A1", "en": "final A1 test", "review": true }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "A2",
+      "name": "Plataforma",
+      "en": "elementary",
+      "summary": "Understands frequent expressions about immediate needs (shopping, work, family). Can describe their background and environment and handle simple routine exchanges.",
+      "modules": [
+        { "id": "A2.1", "title": "Mi pasado", "en": "my past", "cando": "tell what I did last weekend, on a trip, in a past year", "grammar": "pretérito indefinido (regular + ser/ir, tener, hacer, estar); ayer, el año pasado", "vocab": "holidays, trips, weekends" },
+        { "id": "A2.2", "title": "Antes y ahora", "en": "then and now", "cando": "describe how things used to be and compare with today", "grammar": "pretérito imperfecto for habits and descriptions; antes / ahora; soler in the past", "vocab": "childhood, places, changes" },
+        { "id": "A2.3", "title": "Contar una historia", "en": "telling a story", "cando": "tell a simple story or anecdote in order", "grammar": "indefinido vs imperfecto (basic); connectors: primero, luego, de repente, al final", "vocab": "events, feelings" },
+        { "id": "A2.4", "title": "Comparar y elegir", "en": "comparing and choosing", "cando": "compare things and people and explain my choice", "grammar": "comparatives (más/menos… que, tan… como); superlatives; mejor/peor", "vocab": "products, cities, prices" },
+        { "id": "A2.5", "title": "Casa y barrio", "en": "home and neighbourhood", "cando": "describe my home and look for a flat", "grammar": "hay / estar; ordinals; direct object pronouns lo, la, los, las", "vocab": "rooms, furniture, renting" },
+        { "id": "A2.6", "title": "Trabajo y estudios", "en": "work and studies", "cando": "talk about my experience and understand simple job ads", "grammar": "pretérito perfecto vs indefinido; llevar + time; desde / hace", "vocab": "jobs, skills, CV" },
+        { "id": "A2.7", "title": "Servicios y trámites", "en": "services and paperwork", "cando": "make an appointment and deal with simple paperwork", "grammar": "formal usted; polite requests (¿podría…?); tener que / hay que", "vocab": "bank, post office, doctor, documents" },
+        { "id": "A2.8", "title": "Consejos e instrucciones", "en": "advice and instructions", "cando": "give and follow instructions and simple advice", "grammar": "affirmative imperative (tú, usted) + pronouns; deberías", "vocab": "recipes, directions, health" },
+        { "id": "A2.9", "title": "Planes y futuro", "en": "plans and the future", "cando": "talk about future plans and conditions", "grammar": "futuro simple; si + present, future; pensar + infinitive", "vocab": "plans, weather forecast, goals" }
+      ]
+    },
+    {
+      "id": "B1",
+      "name": "Umbral",
+      "en": "intermediate",
+      "summary": "Understands the main points of clear, familiar input. Can deal with most travel situations, describe experiences, hopes and plans, and give short reasons for opinions.",
+      "modules": [
+        { "id": "B1.1", "title": "Experiencias y anécdotas", "en": "experiences and anecdotes", "cando": "tell experiences and anecdotes with detail and feelings", "grammar": "perfecto / indefinido / imperfecto together; pluscuamperfecto", "vocab": "travel, surprises, emotions" },
+        { "id": "B1.2", "title": "Opinar y valorar", "en": "giving opinions", "cando": "give and justify my opinion, agree and disagree", "grammar": "creo que + indicative / no creo que + subjunctive; es importante que + subjunctive", "vocab": "society, everyday issues" },
+        { "id": "B1.3", "title": "Deseos y sentimientos", "en": "wishes and feelings", "cando": "express wishes, hopes and feelings about others", "grammar": "present subjunctive: quiero que, espero que, me alegra que, ojalá", "vocab": "relationships, celebrations" },
+        { "id": "B1.4", "title": "Recomendar y aconsejar", "en": "recommending and advising", "cando": "give recommendations and react to problems", "grammar": "te recomiendo que / te aconsejo que + subjunctive; negative imperative", "vocab": "health, studies, travel" },
+        { "id": "B1.5", "title": "Hipótesis y condiciones", "en": "hypotheses and conditions", "cando": "talk about imaginary situations and probability", "grammar": "condicional; si + imperfect subjunctive (intro); quizás / a lo mejor", "vocab": "dreams, plans, choices" },
+        { "id": "B1.6", "title": "El mundo laboral", "en": "the world of work", "cando": "handle a job interview and write a formal email", "grammar": "formal register; relative clauses (que, donde, el que)", "vocab": "interviews, email formulas, company" },
+        { "id": "B1.7", "title": "Noticias y medios", "en": "news and media", "cando": "understand the main points of news and report what others said", "grammar": "reported speech (dice que, dijo que); passive se", "vocab": "news, media, events" },
+        { "id": "B1.8", "title": "Problemas y quejas", "en": "problems and complaints", "cando": "explain a problem and complain politely to get a solution", "grammar": "connectors: aunque, sin embargo, por eso; por / para", "vocab": "services, travel problems, refunds" }
+      ]
+    },
+    {
+      "id": "B2",
+      "name": "Avanzado",
+      "en": "upper intermediate",
+      "summary": "Understands the main ideas of complex texts. Interacts fluently and spontaneously with native speakers, and can explain a viewpoint with advantages and disadvantages.",
+      "modules": [
+        { "id": "B2.1", "title": "Argumentar y debatir", "en": "arguing and debating", "cando": "defend a point of view in a debate with clear arguments", "grammar": "aunque + subjunctive/indicative; concessive and causal connectors", "vocab": "debate, society, environment" },
+        { "id": "B2.2", "title": "Lo que pudo haber sido", "en": "what could have been", "cando": "talk about past hypotheses, regrets and reproaches", "grammar": "si + pluscuamperfecto de subjuntivo, condicional compuesto; ojalá hubiera", "vocab": "decisions, life events" },
+        { "id": "B2.3", "title": "Contar lo que se dijo", "en": "reporting what was said", "cando": "report conversations accurately, with tone and intention", "grammar": "full reported speech with tense changes; reporting verbs (aconsejar, negar, prometer)", "vocab": "communication verbs" },
+        { "id": "B2.4", "title": "Escribir con registro", "en": "writing in the right register", "cando": "write clear, detailed formal texts: reports, cover letters, complaints", "grammar": "impersonal and passive structures; nominalisation; formal connectors", "vocab": "work, institutions" },
+        { "id": "B2.5", "title": "Matices", "en": "nuances", "cando": "express nuances of certainty, probability and attitude", "grammar": "ser/estar with change of meaning; future and conditional of probability; subjunctive after relative clauses", "vocab": "attitudes, personality" },
+        { "id": "B2.6", "title": "Cultura y expresiones", "en": "culture and expressions", "cando": "understand and use common idioms and cultural references", "grammar": "idiomatic structures; diminutives and augmentatives", "vocab": "idioms, regional culture" },
+        { "id": "B2.7", "title": "Textos largos", "en": "long texts", "cando": "follow long talks and read articles about current issues", "grammar": "text cohesion: reference, connectors, ellipsis", "vocab": "current affairs, science, culture" }
+      ]
+    },
+    {
+      "id": "C1",
+      "name": "Dominio operativo eficaz",
+      "en": "advanced",
+      "summary": "Understands demanding, longer texts and implicit meaning. Expresses ideas fluently and flexibly for social, academic and professional purposes.",
+      "modules": [
+        { "id": "C1.1", "title": "Leer entre líneas", "en": "reading between the lines", "cando": "understand implicit meaning, irony and attitude in long texts", "grammar": "modality, evaluative language, irony markers", "vocab": "opinion journalism, literature" },
+        { "id": "C1.2", "title": "Hablar en público", "en": "public speaking", "cando": "give clear, well-structured presentations on complex subjects", "grammar": "discourse markers for structuring, emphasis and digression", "vocab": "academic and professional topics" },
+        { "id": "C1.3", "title": "Negociar y convencer", "en": "negotiating and persuading", "cando": "negotiate, persuade and handle disagreement diplomatically", "grammar": "hedging and politeness strategies; conditional and subjunctive for softening", "vocab": "business, conflict resolution" },
+        { "id": "C1.4", "title": "Escritura avanzada", "en": "advanced writing", "cando": "write complex texts with a style suited to the reader", "grammar": "complex subordination; stylistic word order; punctuation for style", "vocab": "essays, reports, reviews" },
+        { "id": "C1.5", "title": "Expresión idiomática", "en": "idiomatic expression", "cando": "use idioms, colloquial language and humour naturally", "grammar": "colloquial syntax; set phrases; register shifts", "vocab": "colloquial Spanish, regional variants" }
+      ]
+    },
+    {
+      "id": "C2",
+      "name": "Maestría",
+      "en": "mastery",
+      "summary": "Understands virtually everything heard or read. Expresses themselves spontaneously, very fluently and precisely, with fine shades of meaning.",
+      "modules": [
+        { "id": "C2.1", "title": "Precisión y matiz", "en": "precision and nuance", "cando": "express myself spontaneously and precisely, with fine shades of meaning", "grammar": "full command of the verb system and modality", "vocab": "near-synonyms, connotation" },
+        { "id": "C2.2", "title": "Variedades del español", "en": "varieties of Spanish", "cando": "understand any variety of Spanish, at any speed, including dialects", "grammar": "regional grammar (voseo, leísmo, ustedes vs vosotros)", "vocab": "Spain and Latin America" },
+        { "id": "C2.3", "title": "Literatura y juego de palabras", "en": "literature and wordplay", "cando": "enjoy literature, wordplay, humour and cultural allusions", "grammar": "literary tenses and figures of speech", "vocab": "literature, proverbs, humour" },
+        { "id": "C2.4", "title": "Mediación", "en": "mediation", "cando": "summarise and reformulate information from many sources into a coherent text", "grammar": "advanced reformulation and synthesis", "vocab": "any field" }
+      ]
+    }
+  ]
+}
