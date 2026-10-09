@@ -35,14 +35,18 @@
 
     <div id="pantalla-repaso" class="oculta">
       <section id="tarjeta" class="tarjeta">
+        <p id="caja" class="caja"></p>
         <p id="pregunta" class="pregunta"></p>
         <p id="respuesta" class="respuesta oculta"></p>
         <p id="toca" class="toca" data-pista="tap to see the answer">toca para girar</p>
       </section>
 
-      <div class="botones">
-        <button id="mal" class="oculta" data-pista="again">[ ✗ otra vez ]</button>
-        <button id="bien" class="oculta" data-pista="I know it">[ ✓ la sé ]</button>
+      <!-- How do you feel about this word? 4 simple answers, from "no idea" to "easy" -->
+      <div id="respuestas" class="respuestas oculta">
+        <button data-nivel="0" data-pista="I don't know it">no la sé</button>
+        <button data-nivel="1" data-pista="rings a bell">me suena</button>
+        <button data-nivel="2" data-pista="I know it">la sé</button>
+        <button data-nivel="3" data-pista="easy">¡fácil!</button>
       </div>
 
       <div id="extra" class="botones oculta">

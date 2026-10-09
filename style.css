@@ -117,8 +117,22 @@ button:active {
   gap: 12px;
 }
 
-.botones button {
-  font-size: 16px;   /* a bit smaller, so "[ ✗ otra vez ]" fits on one line */
+/* the 4 answers: a 2 × 2 grid, from "no idea" (top left) to "easy" (bottom right) */
+.respuestas {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.respuestas button {
+  font-size: 16px;
+}
+
+/* the box on the card: small, top of the card */
+.caja {
+  margin: 0 0 8px;
+  font-size: 12px;
+  color: var(--tenue);
 }
 
 /* the two "want more?" buttons: one per line, so the text fits on a phone */

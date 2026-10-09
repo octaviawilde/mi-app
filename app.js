@@ -4,8 +4,8 @@ const pregunta = document.querySelector("#pregunta");
 const respuesta = document.querySelector("#respuesta");
 const tarjetaCaja = document.querySelector("#tarjeta");   // NEW: tap the card to flip it
 const toca = document.querySelector("#toca");
-const botonBien = document.querySelector("#bien");
-const botonMal = document.querySelector("#mal");
+const respuestas = document.querySelector("#respuestas");   // NEW: the 4 answer buttons
+const cajaTexto = document.querySelector("#caja");          // NEW: "caja 2 ▮▮▯▯▯" on the card
 
 // 2. Settings (change these numbers whenever you like)
 const NUEVAS_POR_DIA = 15;           // how many new cards per day
@@ -106,8 +106,8 @@ function siguiente() {
     escribir(respuesta, "¿quieres más?_", "want more?");
     respuesta.classList.remove("oculta");
     toca.classList.add("oculta");
-    botonBien.classList.add("oculta");
-    botonMal.classList.add("oculta");
+    respuestas.classList.add("oculta");
+    cajaTexto.textContent = "";
     extra.classList.remove("oculta");   // NEW: show [ + 5 nuevas ] [ práctica libre ]
     return;   // stop here: nothing else to show
   }
@@ -118,45 +118,61 @@ function siguiente() {
   escribir(respuesta, actual.en + "\n" + actual.ejemplo);
   respuesta.classList.add("oculta");
   toca.classList.remove("oculta");
-  botonBien.classList.add("oculta");
-  botonMal.classList.add("oculta");
+  respuestas.classList.add("oculta");
+  mostrarCaja();
 }
 
-// 9. Flip: show the answer and the ✓ / ✗ buttons
+// NEW: show where this word is: "nueva" or "caja 2 ▮▮▯▯▯"
+function mostrarCaja() {
+  const p = progreso[actual.id];
+  if (!p) {
+    escribir(cajaTexto, "nueva", "new word");
+    return;
+  }
+  const caja = p.caja || 1;
+  escribir(cajaTexto, `caja ${caja} ${"▮".repeat(caja)}${"▯".repeat(5 - caja)}`, `box ${caja} of 5`);
+}
+
+// 9. Flip: show the answer and the 4 answer buttons
 function girar() {
   if (cola.length === 0) return;                            // "all done" screen: nothing to flip
   if (!respuesta.classList.contains("oculta")) return;      // already flipped
   respuesta.classList.remove("oculta");
   toca.classList.add("oculta");
-  botonBien.classList.remove("oculta");
-  botonMal.classList.remove("oculta");
+  respuestas.classList.remove("oculta");
 }
 
-// 10. Move the card between boxes, then save
-//     ✓ → next box, comes back later  ·  ✗ → back to box 1, comes back today
-function guardar(laSe) {
+// 10. NEW: your answer moves the card between boxes, then we save
+//   nivel 0 "no la sé"  → back to box 1, comes back TODAY
+//   nivel 1 "me suena"  → stays in its box, comes back TOMORROW
+//   nivel 2 "la sé"     → next box (+1), waits longer
+//   nivel 3 "¡fácil!"   → jumps 2 boxes (+2), waits much longer
+function responder(nivel) {
   const hoy = fecha();
   const p = progreso[actual.id] || { bien: 0, mal: 0, caja: 1, primera: hoy };
   p.caja = p.caja || 1;
+  p.suena = p.suena || 0;
   cola.shift();   // take this card off the front of the queue
 
-  if (modoLibre) {
-    // NEW: free practice only counts ✓ / ✗, it doesn't move the card between boxes
-    if (laSe) {
-      p.bien++;
+  // count the answer (the progress screen and Profe use these numbers)
+  if (nivel === 0) p.mal++;
+  if (nivel === 1) p.suena++;
+  if (nivel >= 2) p.bien++;
+
+  if (nivel === 0) {
+    cola.push(actual);   // "no la sé": it goes to the back of today's queue
+  }
+
+  if (!modoLibre) {      // free practice never moves cards between boxes
+    if (nivel === 0) {
+      p.caja = 1;
+      p.proxima = hoy;
+    } else if (nivel === 1) {
+      p.proxima = fecha(1);
     } else {
-      p.mal++;
-      cola.push(actual);
+      p.caja = Math.min(p.caja + (nivel === 3 ? 2 : 1), 5);
+      p.proxima = fecha(DIAS[p.caja]);
     }
-  } else if (laSe) {
-    p.bien++;
-    p.caja = Math.min(p.caja + 1, 5);
-    p.proxima = fecha(DIAS[p.caja]);
-  } else {
-    p.mal++;
-    p.caja = 1;
-    p.proxima = hoy;
-    cola.push(actual);   // "otra vez": it goes to the back of today's queue
   }
 
   p.ultima = new Date().toISOString();
@@ -197,8 +213,10 @@ function practicaLibre() {
 
 // 11. When a button is tapped, run a function
 tarjetaCaja.addEventListener("click", girar);
-botonBien.addEventListener("click", () => guardar(true));
-botonMal.addEventListener("click", () => guardar(false));
+// NEW: one listener for all 4 answers: each button knows its own level (data-nivel)
+for (const boton of respuestas.querySelectorAll("button")) {
+  boton.addEventListener("click", () => responder(Number(boton.dataset.nivel)));
+}
 document.querySelector("#mas-nuevas").addEventListener("click", masNuevas);
 document.querySelector("#libre").addEventListener("click", practicaLibre);
 
@@ -475,7 +493,7 @@ if ("serviceWorker" in navigator) {
 
 // ---------- 17. Version + updates ----------
 // Change VERSION every time you publish, so you can see on the phone which version you have.
-const VERSION = "1.1";
+const VERSION = "1.2";
 document.querySelector("#version").textContent = `mi-app v${VERSION}`;
 
 // [ ↻ actualizar ]: get the newest files and restart the app
