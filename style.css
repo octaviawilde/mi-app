@@ -555,3 +555,23 @@ button:active {
 .done-step {
   color: var(--accent);
 }
+
+/* the API key box: dots like a password, but it's a normal text box (see index.html) */
+.key-row {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+}
+
+.masked {
+  -webkit-text-security: disc;
+}
+
+/* [ver] / [ocultar]: a quiet text button, like the rest of the terminal */
+.eye {
+  flex: none;
+  border: none;
+  padding: 8px 0 8px 4px;
+  font-size: 14px;
+  color: var(--muted);
+}

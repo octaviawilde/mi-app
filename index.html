@@ -89,7 +89,15 @@
         <label for="ai-provider" data-hint="provider">proveedor</label>
         <select id="ai-provider" class="text-input"></select>
         <label for="ai-key" data-hint="your API key">tu clave API</label>
-        <input id="ai-key" class="text-input" type="password" autocomplete="off" spellcheck="false">
+        <!-- type="text" (not "password"): so the iPhone doesn't fill in one of YOUR passwords here.
+             The dots come from CSS (.masked), and [ver] shows the key so you can check it. -->
+        <div class="key-row">
+          <input id="ai-key" class="text-input masked" type="text" name="api-key-not-a-password"
+                 autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+                 data-1p-ignore data-lpignore="true">
+          <button id="ai-key-show" class="eye">[ver]</button>
+        </div>
+        <p id="ai-key-check" class="caption"></p>
         <label for="ai-model" data-hint="model: the list comes from your key">modelo</label>
         <select id="ai-model" class="text-input"></select>
         <input id="ai-model-other" class="text-input hidden" type="text" placeholder="nombre del modelo"

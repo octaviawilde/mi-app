@@ -8,7 +8,7 @@
 // The text the learner SEES is Spanish (with small English hints): that's content, not code.
 
 // ---------- 1. Settings (change these numbers whenever you like) ----------
-const VERSION = "1.10";                      // change it every time you publish
+const VERSION = "1.11";                      // change it every time you publish
 const NEW_PER_DAY = 15;                     // new cards per day (when the profile doesn't say)
 const BOX_DAYS = [0, 0, 1, 3, 7, 14];       // days before a card comes back, by box (1–5)
 const NEW_PER_MINUTES = { 5: 5, 15: 10, 30: 15, 60: 20 };   // minutes per day (profile) → new cards per day
@@ -1611,6 +1611,34 @@ const aiUrl = $("#ai-url");
 const aiStatus = $("#ai-status");
 const OTHER_MODEL = "other";
 
+// What each provider's keys look like (to warn you if the box holds something else)
+const KEY_STARTS = { anthropic: "sk-ant-", openai: "sk-", gemini: "AIza", openrouter: "sk-or-" };
+
+// Keys are plain letters, numbers, - and _. Copying from a website or a note can add
+// spaces, line breaks or invisible characters: remove them all.
+function cleanKey(text) {
+  return text.replace(/[^\x21-\x7E]/g, "");
+}
+
+// Under the box: "108 caracteres · sk-ant-…9Qk" (so you can compare with your key without showing it)
+function checkKey() {
+  const key = cleanKey(aiKey.value);
+  if (key !== aiKey.value) aiKey.value = key;
+  const box = $("#ai-key-check");
+  if (!key) {
+    setText(box, "");
+    return;
+  }
+  const start = KEY_STARTS[aiProvider.value];
+  const looks = `${key.length} caracteres · ${key.slice(0, 7)}…${key.slice(-4)}`;
+  if (start && !key.startsWith(start)) {
+    setText(box, `⚠ ${looks}: una clave de ${AI_PROVIDERS[aiProvider.value].name} empieza por «${start}»`,
+      "this doesn't look like a key from this provider: did the phone fill in something else? tap [ver] to check");
+  } else {
+    setText(box, looks, "length · start…end of your key: compare with the one you copied");
+  }
+}
+
 for (const id in AI_PROVIDERS) aiProvider.append(new Option(AI_PROVIDERS[id].name, id));
 
 // Ask the provider for its models. Returns [{ id, name, free }]
@@ -1685,7 +1713,8 @@ function showOtherBox() {
 // Paste a key (or change provider) → look up the models
 let lookup = 0;   // only the newest lookup counts, if you paste twice quickly
 async function findModels() {
-  const key = aiKey.value.trim();
+  checkKey();
+  const key = cleanKey(aiKey.value);
   if (!key) return;
   if (aiProvider.value === "custom" && !aiUrl.value.trim()) {
     setText(aiStatus, "escribe primero la dirección (URL)", "type the address first");
@@ -1709,10 +1738,13 @@ function drawAiSettings() {
   const current = ai || { provider: "anthropic", key: "", model: "", url: "" };
   aiProvider.value = current.provider;
   aiKey.value = current.key;
+  aiKey.classList.add("masked");
+  $("#ai-key-show").textContent = "[ver]";
   aiUrl.value = current.url || "";
   // until you look up the list again, it shows just the model you chose
   fillModels(current.model ? [{ id: current.model, name: current.model }] : [], current.model);
   updateAiForm();
+  checkKey();
   if (aiReady()) setText(aiStatus, `✓ Profe usa ${AI_PROVIDERS[ai.provider].name} · ${ai.model}`, "Profe's AI is connected");
 }
 
@@ -1725,17 +1757,27 @@ function updateAiForm() {
 
 aiProvider.addEventListener("change", () => {
   fillModels([], "");
+  checkKey();
   updateAiForm();
   findModels();
 });
-aiKey.addEventListener("change", findModels);
-aiKey.addEventListener("paste", () => setTimeout(findModels, 0));   // after the pasted text is in the box
+// typing or pasting: wait until you stop for a moment, then check the key and look up the models
+let keyTimer = null;
+aiKey.addEventListener("input", () => {
+  clearTimeout(keyTimer);
+  keyTimer = setTimeout(findModels, 700);
+});
+// [ver] (show) / [ocultar] (hide) the key
+$("#ai-key-show").addEventListener("click", () => {
+  const hidden = aiKey.classList.toggle("masked");
+  $("#ai-key-show").textContent = hidden ? "[ver]" : "[ocultar]";
+});
 aiModel.addEventListener("change", showOtherBox);
 $("#ai-find-models").addEventListener("click", findModels);
 
 $("#ai-save").addEventListener("click", async () => {
   const model = aiModel.value === OTHER_MODEL ? aiModelOther.value.trim() : aiModel.value;
-  ai = { provider: aiProvider.value, key: aiKey.value.trim(), model, url: aiUrl.value.trim() };
+  ai = { provider: aiProvider.value, key: cleanKey(aiKey.value), model, url: aiUrl.value.trim() };
   save("ai", ai);
   if (!aiReady()) {
     if (!ai.key) setText(aiStatus, "✗ pega tu clave", "paste your key");
