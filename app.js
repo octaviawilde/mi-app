@@ -154,3 +154,80 @@ async function importar() {
 
 botonExportar.addEventListener("click", exportar);
 archivoInput.addEventListener("change", importar);
+
+// ---------- 13. Progress screen ----------
+const pantallaRepaso = document.querySelector("#pantalla-repaso");
+const pantallaProgreso = document.querySelector("#pantalla-progreso");
+const informe = document.querySelector("#informe");
+const botonVerRepaso = document.querySelector("#ver-repaso");
+const botonVerProgreso = document.querySelector("#ver-progreso");
+
+// Each card is "aprendida" (box 3+), "vista" (seen) or "nueva" (never seen)
+function estadoDe(t) {
+  const p = progreso[t.id];
+  if (!p) return "nueva";
+  if ((p.caja || 1) >= 3) return "aprendida";
+  return "vista";
+}
+
+// A text bar like ██▒▒▒░░░░░  (█ learned · ▒ seen · ░ new)
+function barra(lista, ancho = 10) {
+  const total = lista.length;
+  const a = lista.filter(t => estadoDe(t) === "aprendida").length;
+  const v = lista.filter(t => estadoDe(t) === "vista").length;
+  const llenos = Math.round((a / total) * ancho);
+  const medios = Math.round(((a + v) / total) * ancho) - llenos;
+  return "█".repeat(llenos) + "▒".repeat(medios) + "░".repeat(ancho - llenos - medios);
+}
+
+function mostrarProgreso() {
+  const aprendidasTotal = tarjetas.filter(t => estadoDe(t) === "aprendida").length;
+  const vistasTotal = tarjetas.filter(t => estadoDe(t) !== "nueva").length;
+  const lineas = [
+    `aprendidas  ${aprendidasTotal}/${tarjetas.length}`,
+    `vistas      ${vistasTotal}/${tarjetas.length}`,
+    `para hoy    ${cola.length}`,
+    "",
+    "por tema",
+    "█ aprendida  ▒ vista  ░ nueva",
+  ];
+
+  // Group the cards by theme: { animales: [...], verbos: [...], ... }
+  const temas = {};
+  for (const t of tarjetas) {
+    if (!temas[t.tema]) temas[t.tema] = [];
+    temas[t.tema].push(t);
+  }
+  for (const tema in temas) {
+    const lista = temas[tema];
+    const a = lista.filter(t => estadoDe(t) === "aprendida").length;
+    lineas.push(`${tema.padEnd(10)} ${barra(lista)} ${a}/${lista.length}`);
+  }
+
+  // Weak spots: cards you got wrong that aren't learned yet, most ✗ first
+  lineas.push("", "puntos débiles");
+  const debiles = tarjetas
+    .filter(t => progreso[t.id] && progreso[t.id].mal > 0 && estadoDe(t) !== "aprendida")
+    .sort((x, y) => progreso[y.id].mal - progreso[x.id].mal)
+    .slice(0, 7);
+  if (debiles.length === 0) lineas.push("(ninguno todavía)");
+  for (const t of debiles) {
+    lineas.push(`✗${progreso[t.id].mal}  ${t.es} → ${t.en}`);
+  }
+
+  informe.textContent = lineas.join("\n");
+  pantallaRepaso.classList.add("oculta");
+  pantallaProgreso.classList.remove("oculta");
+  botonVerProgreso.classList.add("activo");
+  botonVerRepaso.classList.remove("activo");
+}
+
+function mostrarRepaso() {
+  pantallaProgreso.classList.add("oculta");
+  pantallaRepaso.classList.remove("oculta");
+  botonVerRepaso.classList.add("activo");
+  botonVerProgreso.classList.remove("activo");
+}
+
+botonVerProgreso.addEventListener("click", mostrarProgreso);
+botonVerRepaso.addEventListener("click", mostrarRepaso);

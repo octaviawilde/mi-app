@@ -98,3 +98,29 @@ button:active {
   border: 1px solid var(--verde-suave);
   cursor: pointer;
 }
+
+/* ---------- Menu + progress screen ---------- */
+.menu {
+  display: flex;
+  gap: 16px;
+}
+
+.menu button {
+  flex: none;
+  border: none;
+  padding: 4px 0;
+  color: var(--verde-suave);
+}
+
+.menu button.activo {
+  color: var(--verde);
+  text-decoration: underline;
+}
+
+.informe {
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  margin: 32px 0;
+}
