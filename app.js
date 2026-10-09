@@ -8,10 +8,9 @@ const respuestas = document.querySelector("#respuestas");   // NEW: the 4 answer
 const cajaTexto = document.querySelector("#caja");          // NEW: "caja 2 ▮▮▯▯▯" on the card
 
 // 2. Settings (change these numbers whenever you like)
-const NUEVAS_POR_DIA = 15;           // how many new cards per day
+const NUEVAS_POR_DIA = 15;           // how many new cards per day (if your ficha doesn't say)
 const DIAS = [0, 0, 1, 3, 7, 14];    // days to wait before a card comes back, by box (caja 1–5)
-const PISTAS = true;                 // NEW: true = show the small English hints · false = Spanish only
-if (!PISTAS) document.body.classList.add("sin-pistas");
+// NEW: the hints (pistas) and the new cards per day now come from your ficha (section 18)
 
 // 3. Variables: boxes that remember things while the app is open
 let tarjetas = [];   // all your cards
@@ -20,6 +19,7 @@ let actual = null;   // the card on the screen now
 let colaEscribir = [];   // NEW: today's writing queue
 let modoLibre = false;   // NEW: free practice = review anything, your boxes don't change
 let progreso = JSON.parse(localStorage.getItem("progreso")) || {};
+let perfil = leerGuardado("perfil");   // NEW: your ficha (profile), made in the interview with Profe
 
 // 4. A date as "2026-10-09". fecha() = today, fecha(3) = in 3 days
 function fecha(diasMas = 0) {
@@ -62,10 +62,16 @@ function leerGuardado(clave) {
 async function cargar() {
   tarjetas = (await leerArchivo("cards.json")) || leerGuardado("tarjetas") || (await leerArchivo("ejemplo.json")) || [];
   plan = (await leerArchivo("hoy.json")) || leerGuardado("plan");
+  entrevista = await leerArchivo("profe/entrevista.json");   // NEW: Profe's first-meeting questions
+  aplicarPistas();
   ponerNombre();
   prepararCola();
   siguiente();
-  mostrar("hoy");
+  if (!perfil && entrevista) {
+    conocerProfe();   // NEW: first time here? Profe wants to meet you
+  } else {
+    mostrar("hoy");
+  }
 }
 
 // 6. Today's queue = cards due for review + a few new ones
@@ -73,7 +79,7 @@ function prepararCola() {
   const hoy = fecha();
   const repasos = tarjetas.filter(t => progreso[t.id] && (progreso[t.id].proxima || hoy) <= hoy);
   const nuevasHoy = Object.values(progreso).filter(p => p.primera === hoy).length;
-  const cuantasNuevas = Math.max(0, NUEVAS_POR_DIA - nuevasHoy);
+  const cuantasNuevas = Math.max(0, nuevasPorDia() - nuevasHoy);
   const nuevas = tarjetas.filter(t => !progreso[t.id]).slice(0, cuantasNuevas);
   cola = [...repasos, ...nuevas];
   colaEscribir = escrituraDeHoy();   // NEW
@@ -85,7 +91,7 @@ function pendientesHoy() {
   const repasos = tarjetas.filter(t => progreso[t.id] && (progreso[t.id].proxima || hoy) <= hoy).length;
   const nuevasHoy = Object.values(progreso).filter(p => p.primera === hoy).length;
   const sinVer = tarjetas.filter(t => !progreso[t.id]).length;
-  return repasos + Math.min(sinVer, Math.max(0, NUEVAS_POR_DIA - nuevasHoy)) + escrituraDeHoy().length;
+  return repasos + Math.min(sinVer, Math.max(0, nuevasPorDia() - nuevasHoy)) + escrituraDeHoy().length;
 }
 
 // 7. A card is "learned" when it reaches box 3 (right on 2 different days)
@@ -389,7 +395,7 @@ const archivoInput = document.querySelector("#archivo");
 // Export: put all your progress in a file.
 // On the phone: open the share menu (Save to Files, AirDrop...). Otherwise: download it.
 async function exportar() {
-  const copia = { app: "mi-app", version: 1, fecha: fecha(), progreso: progreso };
+  const copia = { app: "mi-app", version: 1, fecha: fecha(), progreso: progreso, perfil: perfil };
   const texto = JSON.stringify(copia, null, 2);
   const nombreArchivo = `mi-app-backup-${fecha()}.json`;
   const archivo = new File([texto], nombreArchivo, { type: "application/json" });
@@ -445,6 +451,12 @@ async function importar() {
       localStorage.setItem("progreso", JSON.stringify(progreso));
       partes.push(`progreso de ${cambios} tarjetas`);
     }
+    if (copia.perfil && (!perfil || (copia.perfil.ultima || "") > (perfil.ultima || ""))) {
+      perfil = copia.perfil;   // NEW: the ficha travels with the backup (the newest one wins)
+      localStorage.setItem("perfil", JSON.stringify(perfil));
+      aplicarPistas();
+      partes.push("tu ficha");
+    }
     if (partes.length === 0) throw new Error("not a mi-app file");
 
     ponerNombre();
@@ -466,6 +478,7 @@ const pantallas = {
   hoy: document.querySelector("#pantalla-hoy"),
   repaso: document.querySelector("#pantalla-repaso"),
   progreso: document.querySelector("#pantalla-progreso"),
+  profe: document.querySelector("#pantalla-profe"),   // NEW: chatting with Profe
 };
 const botonesMenu = {
   hoy: document.querySelector("#ver-hoy"),
@@ -477,8 +490,11 @@ const botonesMenu = {
 function mostrar(nombre) {
   for (const n in pantallas) {
     pantallas[n].classList.toggle("oculta", n !== nombre);
-    botonesMenu[n].classList.toggle("activo", n === nombre);
+    if (botonesMenu[n]) botonesMenu[n].classList.toggle("activo", n === nombre);
   }
+  // NEW: while you talk to Profe, hide the menu and the status line (calm, one thing at a time)
+  document.querySelector(".menu").classList.toggle("oculta", nombre === "profe");
+  estado.classList.toggle("oculta", nombre === "profe");
   if (nombre === "progreso") dibujarProgreso();
   if (nombre === "hoy") dibujarHoy();
 }
@@ -591,6 +607,8 @@ function dibujarProgreso() {
     ul.append(li);
   }
   informe.append(ul);
+
+  dibujarFicha();   // NEW: what Profe knows about you
 }
 
 // ---------- 15. Today screen (the plan comes from Profe: hoy.json) ----------
@@ -603,11 +621,24 @@ let hechas = JSON.parse(localStorage.getItem("hechas")) || {};   // e.g. { "2026
 
 // NEW: "> hola, Octavia_" with the name from the plan (or just "> hola_")
 function ponerNombre() {
-  nombre.textContent = plan && plan.nombre ? `, ${plan.nombre}` : "";
+  const n = (perfil && perfil.nombre) || (plan && plan.nombre);   // your ficha first
+  nombre.textContent = n ? `, ${n}` : "";
+}
+
+// NEW: no plan file from Profe? Then the app makes a simple one from your ficha
+function planBasico() {
+  const hora = new Date().getHours();
+  const [es, en] = hora < 14 ? ["Buenos días", "good morning"] : hora < 20 ? ["Buenas tardes", "good afternoon"] : ["Buenas noches", "good evening"];
+  return {
+    fecha: fecha(), de: "Profe", nombre: perfil.nombre, basico: true,
+    saludo: `¡${es}, ${perfil.nombre}!`, saludo_en: en,
+    tareas: [{ tipo: "tarjetas", texto: "repasa tus tarjetas", en: "review your cards" }],
+  };
 }
 
 function dibujarHoy() {
   listaTareas.innerHTML = "";   // empty the list, then fill it again
+  if (!plan && perfil) plan = planBasico();
   if (!plan) {
     escribir(saludo, "sin plan de Profe todavía_", "no plan from Profe yet");
     notaPlan.textContent = "";
@@ -662,7 +693,7 @@ if ("serviceWorker" in navigator) {
 
 // ---------- 17. Version + updates ----------
 // Change VERSION every time you publish, so you can see on the phone which version you have.
-const VERSION = "1.3";
+const VERSION = "1.4";
 document.querySelector("#version").textContent = `mi-app v${VERSION}`;
 
 // [ ↻ actualizar ]: get the newest files and restart the app
@@ -688,6 +719,255 @@ document.addEventListener("visibilitychange", () => {
   }
 });
 
-// ---------- 18. Start the app ----------
+// ---------- 18. Profe: the first meeting (onboarding interview) ----------
+// Profe's questions live in profe/entrevista.json: part of the Núcleo, the same for every learner.
+// Your answers become your ficha (profile). It's saved ONLY on this device (localStorage "perfil").
+// Every Profe is the same teacher... but every ficha is different.
+const chat = document.querySelector("#chat");
+const opciones = document.querySelector("#opciones");
+const chatEscribir = document.querySelector("#chat-escribir");
+const chatEntrada = document.querySelector("#chat-entrada");
+const chatEnviar = document.querySelector("#chat-enviar");
+let entrevista = null;   // the questions (from the file)
+let borrador = {};       // your answers so far
+let idiomaActual = null; // the language Profe is asking about right now ("¿Qué tal hablas inglés?")
+
+// New cards per day: from your ficha (minutes per day), or the setting at the top
+const NUEVAS_POR_MINUTOS = { 5: 5, 15: 10, 30: 15, 60: 20 };
+function nuevasPorDia() {
+  return (perfil && NUEVAS_POR_MINUTOS[perfil.minutos]) || NUEVAS_POR_DIA;
+}
+
+// Hints on or off, from your ficha ("ninguna" = no hints)
+function aplicarPistas() {
+  document.body.classList.toggle("sin-pistas", Boolean(perfil && perfil.pistas === "ninguna"));
+}
+
+// Wait a little (in milliseconds), so Profe "types" like a person
+function pausa(ms) {
+  return new Promise(listo => setTimeout(listo, ms));
+}
+
+// A language's name: nombreIdioma("it") → "italiano" (or "Italian" with "en")
+function nombreIdioma(codigo, lengua = "es") {
+  const idioma = entrevista.idiomas[codigo];
+  return idioma ? idioma[lengua] : codigo;
+}
+
+// Fill in the gaps: "¡Mucho gusto, {nombre}!" → "¡Mucho gusto, Octavia!"
+function rellenar(texto) {
+  const huecos = {
+    nombre: borrador.nombre,
+    aprende: nombreIdioma(borrador.aprende || "es"),
+    aprende_en: nombreIdioma(borrador.aprende || "es", "en"),
+    idioma: idiomaActual && nombreIdioma(idiomaActual),
+    idioma_en: idiomaActual && nombreIdioma(idiomaActual, "en"),
+  };
+  return texto.replace(/\{(\w+)\}/g, (hueco, clave) => huecos[clave] || "");
+}
+
+// Add one line to the chat. quien = "profe" or "tu" (you)
+function decir(quien, es, en) {
+  const linea = crear("p", "mensaje " + quien, es, en);
+  chat.append(linea);
+  linea.scrollIntoView({ block: "end", behavior: "smooth" });
+}
+
+// The answer buttons for a step. Some steps build them from the list of languages.
+function opcionesDe(paso) {
+  const todos = Object.keys(entrevista.idiomas);
+  const comoOpcion = codigo => ({ valor: codigo, es: nombreIdioma(codigo), en: nombreIdioma(codigo, "en") });
+  if (paso.opciones === "idiomas") {
+    return todos.filter(c => c !== borrador.nativo).map(comoOpcion);
+  }
+  if (paso.opciones === "aprender") {   // only the languages Profe can already teach
+    return todos.filter(c => entrevista.idiomas[c].aprender && c !== borrador.nativo).map(comoOpcion);
+  }
+  if (paso.opciones === "pistas") {     // languages you know AND the app has hints for (not the one you're learning)
+    const conocidos = [borrador.nativo, ...(borrador.otros || [])].filter(c => c !== borrador.aprende);
+    return [...conocidos.filter(c => entrevista.idiomas[c] && entrevista.idiomas[c].pistas).map(comoOpcion), ...paso.extra];
+  }
+  return paso.opciones;
+}
+
+// "pronto" (coming soon): the languages that aren't ready yet for this step
+function prontoDe(paso) {
+  const todos = Object.keys(entrevista.idiomas).filter(c => c !== "otro");
+  if (paso.opciones === "aprender") {
+    return todos.filter(c => !entrevista.idiomas[c].aprender && c !== borrador.nativo);
+  }
+  if (paso.opciones === "pistas") {
+    return [borrador.nativo, ...(borrador.otros || [])]
+      .filter(c => c !== borrador.aprende && c !== "otro" && entrevista.idiomas[c] && !entrevista.idiomas[c].pistas);
+  }
+  return [];
+}
+
+// Show the answer area for one step and WAIT until you answer.
+// A Promise = "I'll give you the answer later, when the user taps".
+function esperarRespuesta(paso) {
+  opciones.innerHTML = "";
+  chatEscribir.classList.add("oculta");
+
+  return new Promise(responder => {
+    // 1. Type an answer (your name, your city)
+    if (paso.tipo === "texto") {
+      chatEscribir.classList.remove("oculta");
+      chatEntrada.value = "";
+      chatEntrada.focus();
+      const enviar = () => {
+        const texto = chatEntrada.value.trim();
+        if (!texto) return;   // empty: wait for something
+        chatEscribir.classList.add("oculta");
+        chatEnviar.onclick = chatEntrada.onkeydown = null;
+        responder({ valor: texto, es: texto });
+      };
+      chatEnviar.onclick = enviar;
+      chatEntrada.onkeydown = evento => { if (evento.key === "Enter") enviar(); };
+      if (paso.opcional) {
+        const saltar = crear("button", "", "saltar", "skip");
+        saltar.onclick = () => {
+          chatEscribir.classList.add("oculta");
+          responder({ valor: "", es: "—" });
+        };
+        opciones.append(saltar);
+      }
+      return;
+    }
+
+    const lista = opcionesDe(paso);
+
+    // 2. Pick ONE answer
+    if (paso.tipo === "uno" || paso.tipo === "niveles" || paso.tipo === "fin") {
+      for (const op of lista) {
+        const boton = crear("button", "", op.es, op.en);
+        boton.onclick = () => responder(op);
+        opciones.append(boton);
+      }
+    }
+
+    // 3. Pick SEVERAL answers: tap to tick [x] / untick [ ], then "listo"
+    if (paso.tipo === "varios") {
+      const elegidas = [];
+      for (const op of lista) {
+        const boton = crear("button", "", `[ ] ${op.es}`, op.en);
+        boton.onclick = () => {
+          const i = elegidas.indexOf(op);
+          if (i === -1) elegidas.push(op); else elegidas.splice(i, 1);
+          escribir(boton, `${i === -1 ? "[x]" : "[ ]"} ${op.es}`, op.en);
+          boton.classList.toggle("elegida", i === -1);
+        };
+        opciones.append(boton);
+      }
+      const listo = crear("button", "listo", "listo →", "done");
+      listo.onclick = () => responder({
+        valor: elegidas.map(op => op.valor),
+        es: elegidas.length ? elegidas.map(op => op.es).join(", ") : "ninguno",
+      });
+      opciones.append(listo);
+    }
+
+    // languages that are coming soon: one quiet line, not more buttons
+    const pronto = prontoDe(paso);
+    if (pronto.length) {
+      opciones.append(crear("p", "leyenda pronto", "pronto: " + pronto.map(c => nombreIdioma(c)).join(" · "), "coming soon"));
+    }
+    opciones.scrollIntoView({ block: "end", behavior: "smooth" });   // keep the answers on screen
+  });
+}
+
+// One step: Profe talks, you answer, the answer is shown as "tú>"
+async function preguntar(paso, mensajes = paso.profe) {
+  for (const m of mensajes) {
+    await pausa(600);
+    decir("profe", rellenar(m.es), rellenar(m.en));
+  }
+  const respuesta = await esperarRespuesta(paso);
+  opciones.innerHTML = "";
+  decir("tu", respuesta.es);
+  return respuesta.valor;
+}
+
+// The whole interview, step by step
+async function conocerProfe() {
+  borrador = { idiomas: {} };
+  chat.innerHTML = "";
+  mostrar("profe");
+
+  for (const paso of entrevista.pasos) {
+    if (paso.tipo === "niveles") {   // one question per language you speak
+      for (const codigo of borrador.otros || []) {
+        if (codigo === "otro") continue;
+        idiomaActual = codigo;
+        borrador.idiomas[codigo] = await preguntar(paso);
+      }
+      idiomaActual = null;
+      continue;
+    }
+
+    if (paso.tipo === "fin") {
+      for (const m of paso.profe) {
+        await pausa(600);
+        decir("profe", rellenar(m.es), rellenar(m.en));
+      }
+      for (const [es, en] of lineasFicha(borrador)) decir("ficha", es, en);
+      if (await preguntar(paso, paso.despues) === "otra") return conocerProfe();   // start again
+      continue;
+    }
+
+    const valor = await preguntar(paso);
+    borrador[paso.guarda] = valor;
+    if (paso.id === "nativo") borrador.idiomas[valor] = "nativo";
+  }
+
+  // Done: save the ficha on this device and open the app
+  perfil = { ...borrador, creado: perfil ? perfil.creado : fecha(), ultima: new Date().toISOString() };
+  localStorage.setItem("perfil", JSON.stringify(perfil));
+  aplicarPistas();
+  ponerNombre();
+  if (plan && plan.basico) plan = null;   // the simple plan will be made again, with your new name
+  prepararCola();
+  siguiente();
+  mostrar("hoy");
+}
+
+// The ficha as short lines (Spanish + English hint): used at the end of the interview and in [ progreso ]
+function etiqueta(pasoId, valor) {
+  const paso = entrevista.pasos.find(p => p.id === pasoId);
+  const op = Array.isArray(paso.opciones) && paso.opciones.find(o => o.valor === valor);
+  return op ? op.es : String(valor);
+}
+
+function lineasFicha(p) {
+  const idiomas = Object.entries(p.idiomas || {}).map(([c, nivel]) => `${nombreIdioma(c)} (${nivel})`);
+  const lineas = [
+    [`nombre: ${p.nombre}`, "name"],
+    [`hablas: ${idiomas.join(" · ") || "—"}`, "languages you speak"],
+    [`aprendes: ${nombreIdioma(p.aprende)} · nivel ${p.nivel}`, "you're learning · level"],
+    [`pistas: ${p.pistas === "ninguna" ? "sin pistas" : nombreIdioma(p.pistas)}`, "hints"],
+    [`para: ${(p.motivos || []).map(v => etiqueta("motivos", v)).join(" · ") || "—"}`, "why"],
+    [`vives en: ${p.ciudad || "—"} · ${p.escuela ? "con escuela" : "sin escuela"}`, "you live in · with / without a school"],
+    [`te gusta: ${(p.intereses || []).map(v => etiqueta("intereses", v)).join(" · ") || "—"}`, "you like"],
+    [`tiempo: ${etiqueta("minutos", p.minutos)} al día · ${NUEVAS_POR_MINUTOS[p.minutos]} palabras nuevas`, "time per day · new words"],
+  ];
+  return lineas;
+}
+
+// [ progreso ] → "tu ficha": what Profe knows about you, + meet Profe again
+function dibujarFicha() {
+  const caja = document.querySelector("#ficha");
+  caja.innerHTML = "";
+  if (!entrevista) return;   // offline and the questions never loaded: nothing to show
+  if (perfil) {
+    for (const [es, en] of lineasFicha(perfil)) caja.append(crear("p", "mensaje ficha", es, en));
+  } else {
+    caja.append(crear("p", "vacio", "todavía no conoces a Profe", "you haven't met Profe yet"));
+  }
+  const otraVez = crear("button", "enlace", perfil ? "↺ repetir la entrevista" : "→ conocer a Profe", perfil ? "redo the interview" : "meet Profe");
+  otraVez.onclick = conocerProfe;
+  caja.append(otraVez);
+}
+
+// ---------- 19. Start the app ----------
 // At the very end, so everything above already exists when it runs.
 cargar();

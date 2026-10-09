@@ -349,3 +349,84 @@ button:active {
   font-size: 13px;
   color: var(--tenue);
 }
+
+/* ---------- Profe's chat ---------- */
+.chat {
+  margin: 24px 0 16px;
+  font-size: 16px;
+}
+
+.mensaje {
+  margin: 0 0 14px;
+}
+
+.mensaje.profe::before {
+  content: "profe> ";
+  color: var(--verde);
+}
+
+.mensaje.tu {
+  color: var(--tenue);
+}
+
+.mensaje.tu::before {
+  content: "tú> ";
+}
+
+/* the ficha: quiet lines, like a file printed in the terminal */
+.mensaje.ficha {
+  margin: 0 0 8px;
+  padding-left: 12px;
+  border-left: 1px solid var(--linea);
+  font-size: 14px;
+}
+
+/* the answer buttons: small, side by side, they wrap onto new lines */
+.opciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.opciones button {
+  flex: none;
+  padding: 10px 12px;
+  font-size: 15px;
+  text-align: left;
+}
+
+.opciones button.elegida {
+  color: var(--verde);
+  border-color: var(--verde);
+}
+
+.opciones button.listo {
+  flex-basis: 100%;
+  text-align: center;
+}
+
+.pronto {
+  flex-basis: 100%;
+  margin: 4px 0 0;
+}
+
+.chat-escribir {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+  margin-bottom: 8px;
+}
+
+.chat-escribir .entrada {
+  margin: 0;
+  font-size: 18px;
+}
+
+.chat-escribir button {
+  flex: none;
+  padding: 10px 16px;
+}
+
+.ficha .enlace {
+  margin-top: 16px;
+}

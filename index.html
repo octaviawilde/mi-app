@@ -72,8 +72,23 @@
       </div>
     </div>
 
+    <!-- NEW: Profe's chat (first: the interview to meet you) -->
+    <div id="pantalla-profe" class="oculta">
+      <div id="chat" class="chat"></div>
+      <div id="opciones" class="opciones"></div>
+      <div id="chat-escribir" class="chat-escribir oculta">
+        <input id="chat-entrada" class="entrada" type="text" autocomplete="off" autocorrect="off"
+               spellcheck="false" enterkeyhint="send">
+        <button id="chat-enviar" data-pista="send">→</button>
+      </div>
+    </div>
+
     <div id="pantalla-progreso" class="oculta">
       <div id="informe" class="informe"></div>
+
+      <!-- NEW: your ficha: what Profe knows about you -->
+      <h2 class="titulo" data-pista="your profile: what Profe knows about you">tu ficha</h2>
+      <div id="ficha" class="ficha"></div>
 
       <!-- Your data: things you need only sometimes, so they live here, out of the way -->
       <h2 class="titulo" data-pista="your data">tus datos</h2>
