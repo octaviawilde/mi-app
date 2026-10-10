@@ -3,12 +3,12 @@
 //   1 settings · 2 page elements + state · 3 helpers · 4 saved data (+ migration from v1.5)
 //   5 loading · 6 today's queue · 7 review cards · 8 writing · 9 more practice · 10 backup
 //   11 screens · 12 progress · 13 today · 14 Profe's interview · 15 Profe's map (curriculum)
-//   16 Profe with AI (chat) · 17 offline + updates · 18 start
+//   16 placement test · 17 Profe with AI (chat) · 18 offline + updates · 19 start
 // The code is in English so anyone can read it and contribute.
 // The text the learner SEES is Spanish (with small English hints): that's content, not code.
 
 // ---------- 1. Settings (change these numbers whenever you like) ----------
-const VERSION = "1.12";                      // change it every time you publish
+const VERSION = "1.13";                      // change it every time you publish
 const NEW_PER_DAY = 15;                     // new cards per day (when the profile doesn't say)
 const BOX_DAYS = [0, 0, 1, 3, 7, 14];       // days before a card comes back, by box (1–5)
 const NEW_PER_MINUTES = { 5: 5, 15: 10, 30: 15, 60: 20 };   // minutes per day (profile) → new cards per day
@@ -212,6 +212,7 @@ async function start() {
   interview = await loadJson("profe/interview.json");
   profeCore = await loadText("profe/core.md");   // Profe's teaching method, for the AI
   curriculum = await loadJson(`profe/curriculum/${(profile && profile.learning) || "es"}.json`);   // Profe's map
+  placementTest = await loadJson(`profe/placement/${(profile && profile.learning) || "es"}.json`);
 
   applyHints();
   showName();
@@ -662,6 +663,7 @@ const screens = {
   progress: $("#screen-progress"),
   settings: $("#screen-settings"),     // ⚙ you and the app: profile, AI, backups, updates
   interview: $("#screen-interview"),   // meeting Profe (the first time)
+  placement: $("#screen-placement"),   // the placement test
   profe: $("#screen-profe"),           // chatting with Profe (needs an AI)
 };
 const navButtons = {
@@ -678,9 +680,9 @@ function show(name) {
     screens[n].classList.toggle("hidden", n !== name);
     if (navButtons[n]) navButtons[n].classList.toggle("active", n === name);
   }
-  // during the interview, hide the menu and the status line (calm, one thing at a time)
-  $(".menu").classList.toggle("hidden", name === "interview");
-  statusLine.classList.toggle("hidden", ["interview", "profe", "settings"].includes(name));
+  // during the interview and the test, hide the menu and the status line (calm, one thing at a time)
+  $(".menu").classList.toggle("hidden", name === "interview" || name === "placement");
+  statusLine.classList.toggle("hidden", ["interview", "placement", "profe", "settings"].includes(name));
   if (name === "progress") drawProgress();
   if (name === "today") drawToday();
   if (name === "profe") drawTalk();
@@ -815,6 +817,8 @@ function basicPlan() {
     greeting: `¡${es}, ${profile.name}!`, greeting_en: en,
     tasks: [
       { type: "cards", text: "repasa tus tarjetas", en: "review your cards" },
+      ...(placementTest && !profile.placement && profile.level !== "pre-A1"
+        ? [{ type: "placement", text: "haz la prueba de nivel (5 min)", en: "take the placement test (5 min)" }] : []),
       ...lessonTask(),
     ],
   };
@@ -862,6 +866,10 @@ function tick(task) {
   const type = task.type;
   if (type === "cards") {
     show("review");
+    return;
+  }
+  if (type === "placement") {
+    startPlacement();
     return;
   }
   if (type === "lesson") {   // Profe marks it done on your map when you've shown you can do it
@@ -1165,14 +1173,21 @@ async function runInterview(savedAnswers) {
   }
 
   // Done: save the profile on this device and open the app
-  profile = { ...draft, notes: profile ? profile.notes : [], created: profile ? profile.created : day(), updated: new Date().toISOString() };
+  const before = profile || {};
+  profile = { ...draft, notes: before.notes || [], created: before.created || day(), updated: new Date().toISOString() };
+  if (before.placement) {   // you already took the test: its result counts more than a guess
+    profile.placement = before.placement;
+    profile.level = before.placement.level;
+  }
   save("profile", profile);
   applyHints();
   showName();
   if (plan && plan.basic) plan = null;   // the simple plan will be made again, with your new name
   buildQueue();
   nextCard();
-  show("today");
+  // "nada, empiezo de cero" needs no test. Everyone else: check the level they chose.
+  if (placementTest && !profile.placement && profile.level !== "pre-A1") startPlacement();
+  else show("today");
 }
 
 // The profile as short lines (Spanish + English hint): at the end of the interview and in [ progreso ]
@@ -1195,6 +1210,7 @@ function profileLines(p) {
     [`vives en: ${p.city || "—"} · ${p.school ? "con escuela" : "sin escuela"}`, "you live in · with / without a school"],
     [`te gusta: ${list("interests", p.interests)}`, "you like"],
     [`tiempo: ${optionLabel("minutes", p.minutes)} al día · ${NEW_PER_MINUTES[p.minutes]} palabras nuevas`, "time per day · new words"],
+    ...(p.placement ? [[`prueba de nivel (${p.placement.date}): ${p.placement.passed ? "superado " + p.placement.passed + " · " : ""}estudias ${p.placement.start}`, "placement test: passed · now studying"]] : []),
     ...(p.notes || []).map(note => [`✎ ${note}`, "Profe remembers"]),
   ];
 }
@@ -1212,6 +1228,11 @@ function drawProfile() {
   const again = make("button", "link", profile ? "↺ repetir la entrevista" : "→ conocer a Profe", profile ? "redo the interview" : "meet Profe");
   again.onclick = () => meetProfe();
   box.append(again);
+  if (profile && placementTest) {
+    const test = make("button", "link", profile.placement ? "↺ repetir la prueba de nivel" : "→ hacer la prueba de nivel", profile.placement ? "retake the placement test" : "take the placement test");
+    test.onclick = startPlacement;
+    box.append(test);
+  }
 }
 
 
@@ -1327,7 +1348,200 @@ function drawMap() {
 
 }
 
-// ---------- 16. Profe with AI (the chat) ----------
+// ---------- 16. The placement test ----------
+// profe/placement/<language>.json: 6 questions per CEFR level (grammar, vocabulary, reading, writing).
+// The level you CHOSE in the interview is a guess. The test checks it:
+//   start at your level → pass (4 of 6)? go up one level, and again... → fail? that's the level to study.
+//   fail the first level? go down, until you pass one.
+// No AI needed: the code scores it. It can't hear you, so it doesn't measure listening or speaking.
+let placementTest = null;
+const ptProgress = $("#pt-progress");
+const ptText = $("#pt-text");
+const ptQuestion = $("#pt-question");
+const ptCompose = $("#pt-compose");
+const ptInput = $("#pt-input");
+const ptSend = $("#pt-send");
+const ptOptions = $("#pt-options");
+const SKILLS = { grammar: ["gramática", "grammar"], vocabulary: ["vocabulario", "vocabulary"], reading: ["lectura", "reading"], writing: ["escritura", "writing"] };
+
+// A new order every time: [a, b, c] → [c, a, b]
+function shuffle(list) {
+  return list.map(x => [Math.random(), x]).sort((a, b) => a[0] - b[0]).map(pair => pair[1]);
+}
+
+// Is what you typed one of the right answers? Accents, ¿¡ and one wrong letter are forgiven.
+function isRightAnswer(written, answers) {
+  const simple = t => stripAccents(normalize(t));
+  const w = simple(written);
+  return answers.some(a => simple(a) === w || (w.length >= 8 && editDistance(simple(a), w) <= 1));
+}
+
+// Show one question and WAIT for the answer. Gives back true (right) or false (wrong / "no lo sé").
+function askItem(item) {
+  ptOptions.innerHTML = "";
+  ptText.classList.toggle("hidden", !item.text);
+  ptText.textContent = item.text || "";
+  ptCompose.classList.add("hidden");
+
+  return new Promise(answerWith => {
+    if (item.type === "write") {
+      setText(ptQuestion, item.en, "write this in Spanish");
+      ptCompose.classList.remove("hidden");
+      ptInput.value = "";
+      ptInput.focus();
+      const send = () => {
+        if (!ptInput.value.trim()) return;
+        ptSend.onclick = ptInput.onkeydown = null;
+        answerWith(isRightAnswer(ptInput.value, item.answers));
+      };
+      ptSend.onclick = send;
+      ptInput.onkeydown = event => { if (event.key === "Enter") send(); };
+    } else {
+      setText(ptQuestion, item.q);
+      for (const option of shuffle([item.answer, ...item.wrong])) {
+        const button = make("button", "", option);
+        button.onclick = () => answerWith(option === item.answer);
+        ptOptions.append(button);
+      }
+    }
+    // an honest "I don't know" is better than a lucky guess: it makes your level more accurate
+    const skip = make("button", "back", "no lo sé", "I don't know (better than guessing!)");
+    skip.onclick = () => {
+      ptSend.onclick = ptInput.onkeydown = null;
+      answerWith(false);
+    };
+    ptOptions.append(skip);
+  });
+}
+
+// One level: 6 questions. Stops early when you can't pass any more (kinder for beginners).
+async function testLevel(level, skills) {
+  const needed = placementTest.pass;
+  let right = 0;
+  let wrong = 0;
+  for (const [i, item] of level.items.entries()) {
+    setText(ptProgress, `prueba de nivel · ${level.id} · pregunta ${i + 1} de ${level.items.length}`, "placement test · level · question");
+    const ok = await askItem(item);
+    if (ok) right++; else wrong++;
+    const s = skills[item.skill] = skills[item.skill] || {};
+    s[level.id] = s[level.id] || { right: 0, total: 0 };
+    s[level.id].total++;
+    if (ok) s[level.id].right++;
+    if (wrong > level.items.length - needed) break;   // too many wrong to pass: stop this level
+  }
+  return right;
+}
+
+// The whole test. Result: the level to STUDY (the first one you didn't pass).
+async function runPlacement() {
+  const levels = placementTest.levels;
+  const skills = {};    // { grammar: { A1: { right: 2, total: 2 }, ... }, ... }
+  const scores = {};    // { A1: 5, A2: 2 }
+  const guess = map.start || (profile && profile.level);   // where to begin: your last result, or your own guess
+  let i = guess === "C2" ? levels.length - 1 : Math.max(0, levels.findIndex(l => l.id === guess));
+  let direction = null;
+  let placed = null;
+
+  while (placed === null) {
+    const right = await testLevel(levels[i], skills);
+    scores[levels[i].id] = right;
+    if (right >= placementTest.pass) {                 // passed this level
+      if (direction === "down") placed = levels[i + 1].id;       // we came down from a failed one
+      else if (i === levels.length - 1) placed = "C2";            // passed the last level in the test
+      else { direction = "up"; i++; }
+    } else {                                           // didn't pass
+      if (direction === "up" || i === 0) placed = levels[i].id;
+      else { direction = "down"; i--; }
+    }
+  }
+
+  // per skill: the highest level where you got at least half right
+  const order = levels.map(l => l.id);
+  const skillLevels = {};
+  for (const skill in SKILLS) {
+    const passed = order.filter(id => skills[skill] && skills[skill][id] && skills[skill][id].right * 2 >= skills[skill][id].total);
+    skillLevels[skill] = passed.length ? passed[passed.length - 1] : null;
+  }
+  const beginner = placed === "A1" && scores.A1 <= 1;   // (almost) nothing right at A1 = starting from zero
+  const all = [...order, "C2"];
+  const passed = all[all.indexOf(placed) - 1] || null;   // the level below the one you'll study
+  return { date: day(), level: beginner ? "pre-A1" : placed, start: placed, passed, scores, skills: skillLevels };
+}
+
+// Start the test (from the interview, the Today task, or ⚙)
+async function startPlacement() {
+  if (!placementTest || !profile) return;
+  show("placement");
+  ptText.classList.add("hidden");
+  ptCompose.classList.add("hidden");
+  setText(ptProgress, "prueba de nivel", "placement test");
+  setText(ptQuestion, "¿Cuál es tu nivel de verdad?", "What's your real level?");
+  ptOptions.innerHTML = "";
+  ptOptions.append(make("p", "caption soon", "unos 5 minutos · sin diccionario · si no lo sabes, pulsa «no lo sé»",
+    "about 5 minutes · no dictionary · if you don't know, tap \"no lo sé\""));
+  const go = make("button", "", "empezar →", "start");
+  const later = make("button", "", "ahora no", "not now");
+  ptOptions.append(go, later);
+  const answer = await new Promise(choose => {
+    go.onclick = () => choose(true);
+    later.onclick = () => choose(false);
+  });
+  if (!answer) {
+    show("today");
+    return;
+  }
+
+  const result = await runPlacement();
+  profile.placement = result;
+  profile.level = result.level;
+  profile.updated = new Date().toISOString();
+  save("profile", profile);
+  map.start = result.start;
+  save("map", map);
+  showPlacementResult(result);
+}
+
+function showPlacementResult(result) {
+  ptText.classList.add("hidden");
+  ptCompose.classList.add("hidden");
+  ptOptions.innerHTML = "";
+  setText(ptProgress, "prueba de nivel · resultado", "placement test · result");
+  const level = curriculum && curriculum.levels.find(l => l.id === result.start);
+  // "superado" = the level you passed · "ahora estudias" = the level you work on next
+  setText(ptQuestion, `ahora estudias: ${result.start}${level ? " · " + level.name : ""}`, level ? `you now study: ${level.en}` : "you now study");
+  ptOptions.append(make("p", "now", result.passed ? `✓ has superado: ${result.passed}` : "empiezas desde el principio",
+    result.passed ? `you've passed ${result.passed}` : "you start from the beginning"));
+  for (const [es, en] of placementLines(result)) ptOptions.append(make("p", "message profile-line", es, en));
+  const step = curriculum && currentStep();
+  if (step) ptOptions.append(make("p", "now", `empiezas en: ${step.title}`, `you start at: ${step.review ? "review" : step.cando}`));
+  ptOptions.append(make("p", "caption soon", "es una estimación: no mide hablar ni escuchar. Profe lo ajusta contigo.",
+    "it's an estimate: it can't measure speaking or listening. Profe adjusts it with you."));
+  const go = make("button", "ready", "¡empezamos! →", "let's start!");
+  go.onclick = () => {
+    buildQueue();
+    nextCard();
+    show("today");
+  };
+  ptOptions.append(go);
+}
+
+// "gramática: A2" … (used on the result screen and in "tu ficha")
+function placementLines(result) {
+  return Object.keys(SKILLS).map(skill => {
+    const got = result.skills[skill];
+    return [`${SKILLS[skill][0]}: ${got || "por debajo de A1"}`, `${SKILLS[skill][1]}${got ? "" : ": below A1"}`];
+  });
+}
+
+// For Profe (the AI)
+function placementContext() {
+  const p = profile && profile.placement;
+  if (!p) return "\nPlacement test: not taken yet (the level above is the learner's own guess).";
+  const skills = Object.keys(SKILLS).map(s => `${s} ${p.skills[s] || "below A1"}`).join(", ");
+  return `\nPlacement test (${p.date}): passed ${p.passed || "nothing yet"}, so the level to study is ${p.start}; highest level passed per skill: ${skills}. Listening and speaking were not measured: assess them in conversation.`;
+}
+
+// ---------- 17. Profe with AI (the chat) ----------
 // Profe's brain is an AI model. The app has no server: your phone talks DIRECTLY to the
 // AI provider you choose, with YOUR API key. The key is saved only on this device
 // (localStorage "ai"), it's never in a backup, and it's only sent to that provider.
@@ -1455,7 +1669,7 @@ function learnerContext() {
     `Seen words: ${seen.slice(0, 200).join(", ") || "none yet"}`,
     `Weak words: ${weak.join(", ") || "none yet"}`);
   if (plan) lines.push(`Today's plan: ${plan.tasks.map(t => t.en || t.text).join(" · ")}`);
-  return lines.join("\n") + mapContext();
+  return lines.join("\n") + placementContext() + mapContext();
 }
 
 // ---- The chat screen ----
@@ -1811,7 +2025,7 @@ $("#ai-forget").addEventListener("click", () => {
   setText(aiStatus, "clave borrada de este teléfono", "key deleted from this phone");
 });
 
-// ---------- 17. Offline + updates ----------
+// ---------- 18. Offline + updates ----------
 // The service worker (sw.js) keeps a copy of the app, so it opens with no internet.
 if ("serviceWorker" in navigator) {
   // updateViaCache "none" = always check the real sw.js, never an old saved copy
@@ -1843,6 +2057,6 @@ document.addEventListener("visibilitychange", () => {
   }
 });
 
-// ---------- 18. Start the app ----------
+// ---------- 19. Start the app ----------
 // At the very end, so everything above already exists when it runs.
 start();

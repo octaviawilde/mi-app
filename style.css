@@ -575,3 +575,29 @@ button:active {
   font-size: 14px;
   color: var(--muted);
 }
+
+/* ---------- Placement test ---------- */
+/* the short text to read before a question */
+.pt-text {
+  margin: 24px 0 0;
+  padding-left: 12px;
+  border-left: 1px solid var(--line);
+  font-size: 16px;
+}
+
+#screen-placement .question {
+  margin: 24px 0 20px;
+  font-size: 22px;
+}
+
+/* answers: one per line, easy to tap */
+#pt-options button:not(.back) {
+  flex-basis: 100%;
+}
+
+/* result: one line per skill */
+#pt-options .profile-line,
+#pt-options .now {
+  flex-basis: 100%;
+  margin: 0;
+}

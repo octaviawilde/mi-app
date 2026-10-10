@@ -140,6 +140,19 @@
       <button id="talk-new" class="link" data-hint="new conversation (Profe keeps its notes about you)">↺ nueva conversación</button>
     </div>
 
+    <!-- The placement test: one question at a time -->
+    <div id="screen-placement" class="hidden">
+      <p id="pt-progress" class="line"></p>
+      <p id="pt-text" class="pt-text hidden"></p>
+      <p id="pt-question" class="question"></p>
+      <div id="pt-compose" class="chat-compose hidden">
+        <input id="pt-input" class="text-input" type="text" autocomplete="off" autocorrect="off"
+               autocapitalize="off" spellcheck="false" enterkeyhint="send">
+        <button id="pt-send" data-hint="send">→</button>
+      </div>
+      <div id="pt-options" class="choices"></div>
+    </div>
+
     <!-- The first meeting with Profe: the interview -->
     <div id="screen-interview" class="hidden">
       <div id="chat" class="chat"></div>
