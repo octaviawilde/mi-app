@@ -113,7 +113,7 @@
   "pt.zero": "empiezas desde el principio",
   "pt.below": "por debajo de A1",
   "pt.startAt": "empiezas en: {title}",
-  "pt.estimate": "es una estimación: no mide hablar ni escuchar. Profe lo ajusta contigo.",
+  "pt.estimate": "es una estimación: no mide cómo hablas. Profe lo ajusta contigo.",
   "talk.placeholder": "escribe a Profe…",
   "talk.new": "↺ nueva conversación",
   "talk.hello": "¡Hola{name}! Escríbeme una frase que has oído hoy, o pregúntame lo que quieras.",
@@ -202,5 +202,12 @@
   "topic.nuance": "matices",
   "topic.connectors": "conectores",
   "topic.adjectives": "adjetivos",
-  "topic.verbs": "verbos"
+  "topic.verbs": "verbos",
+  "skill.meaning": "sentido",
+  "skill.listening": "escucha",
+  "pt.listen": "[ escuchar ]",
+  "pt.gap": "escribe la palabra que falta",
+  "pt.gapTap": "elige la palabra que falta",
+  "task.freeLesson": "clase con Profe",
+  "lesson.free": "Quiero una clase de mi nivel."
 }

@@ -2,7 +2,7 @@
   "_note": "Profe's first meeting with a new learner. Part of the Núcleo (the core: the same for every learner). Each step: what Profe says (says), how the learner answers (type: text / one / many / levels / end), and where the answer is saved in the profile (saveAs). Every line exists in the app's 5 languages (es, en, uk, it, ru); 'all' = the same in every language. The app fills in {name} and {language}. To change the interview, change this file: no code needed. Language flags: own = the language's name in that language · ui = the app can speak it (text in lang/<code>.json) · teach = Profe can teach it today · planned = on the plan (only these show as \"coming soon\"). Typed answers: check = name / place (a shape check; a place Profe doesn't know is confirmed, not blocked).",
   "languages": {
     "es": { "own": "Español", "ui": true, "teach": true, "planned": true },
-    "en": { "own": "English", "ui": true, "teach": false, "planned": true },
+    "en": { "own": "English", "ui": true, "teach": true, "planned": true },
     "it": { "own": "Italiano", "ui": true, "teach": false, "planned": true },
     "uk": { "own": "Українська", "ui": true, "teach": false, "planned": true },
     "ru": { "own": "Русский", "ui": true, "teach": false, "planned": true },

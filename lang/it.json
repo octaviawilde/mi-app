@@ -113,7 +113,7 @@
   "pt.zero": "inizi dall'inizio",
   "pt.below": "sotto A1",
   "pt.startAt": "inizi da: {title}",
-  "pt.estimate": "è una stima: non misura il parlato né l'ascolto. Profe la aggiusta con te.",
+  "pt.estimate": "è una stima: non misura il parlato. Profe la aggiusta con te.",
   "talk.placeholder": "scrivi a Profe…",
   "talk.new": "↺ nuova conversazione",
   "talk.hello": "Ciao{name}! Scrivimi una frase che hai sentito oggi, o chiedimi quello che vuoi.",
@@ -202,5 +202,12 @@
   "topic.nuance": "sfumature",
   "topic.connectors": "connettivi",
   "topic.adjectives": "aggettivi",
-  "topic.verbs": "verbi"
+  "topic.verbs": "verbi",
+  "skill.meaning": "significato",
+  "skill.listening": "ascolto",
+  "pt.listen": "[ ascolta ]",
+  "pt.gap": "scrivi la parola che manca",
+  "pt.gapTap": "scegli la parola che manca",
+  "task.freeLesson": "lezione con Profe",
+  "lesson.free": "Vorrei una lezione del mio livello."
 }

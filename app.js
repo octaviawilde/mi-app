@@ -9,7 +9,7 @@
 // they're learning, small hint under it = their own language. That's content, not code.
 
 // ---------- 1. Settings (change these numbers whenever you like) ----------
-const VERSION = "1.17";                      // change it every time you publish
+const VERSION = "1.18";                      // change it every time you publish
 const NEW_PER_DAY = 15;                     // new cards per day (when the profile doesn't say)
 const BOX_DAYS = [0, 0, 1, 3, 7, 14];       // days before a card comes back, by box (1–5)
 const NEW_PER_MINUTES = { 5: 5, 15: 10, 30: 15, 60: 20 };   // minutes per day (profile) → new cards per day
@@ -961,6 +961,8 @@ function basicPlan() {
   if (step) {
     const title = language => ({ title: language === speaking.main ? step.title : step.en || step.title });
     tasks.push(task("lesson", "task.lesson", title, { title: step.title }));
+  } else if (!curriculum) {   // no map for this language yet: Profe plans the lesson
+    tasks.push(task("lesson", "task.freeLesson", {}, { free: true }));
   }
   return { date: day(), from: "Profe", name: profile.name, basic: true, greeting, greetingHint, tasks };
 }
@@ -1005,7 +1007,7 @@ function tick(task) {
   }
   if (type === "lesson") {   // Profe marks it done on your map when you've shown you can do it
     show("profe");
-    talkInput.value = t("lesson.start", { title: task.title || task.text.replace(/^clase con Profe: /, "") });
+    talkInput.value = task.free ? t("lesson.free") : t("lesson.start", { title: task.title || task.text.replace(/^clase con Profe: /, "") });
     talkInput.focus();
     return;
   }
@@ -1435,7 +1437,7 @@ function stepTitle(step) {
 
 // For Profe (the AI): where you are on the map, and what comes next
 function mapContext() {
-  if (!curriculum) return "";
+  if (!curriculum) return "\n# No fixed map for this language yet\nPlan the lessons yourself by CEFR level, starting from the learner's level.";
   const all = mapSteps();
   const step = currentStep();
   const level = curriculum.levels.find(l => l.id === (step ? step.level : startLevel()));
@@ -1463,6 +1465,7 @@ function mapContext() {
 function drawMap() {
   const box = $("#map");
   box.innerHTML = "";
+  $("#map-heading").classList.toggle("hidden", !curriculum);   // no map for this language yet: no title either
   if (!curriculum) return;
   const all = mapSteps();
   const step = currentStep();
@@ -1498,11 +1501,15 @@ function drawMap() {
 }
 
 // ---------- 16. The placement test ----------
-// profe/placement/<language>.json: 6 questions per CEFR level (grammar, vocabulary, reading, writing).
+// profe/placement/<language>.json: 8 questions per CEFR level. The kinds of questions:
+//   choice = pick the right answer (grammar, vocabulary, reading, "what does the speaker mean?")
+//   gap    = the missing word: beginners (A1) tap it, everyone else types it. No translation needed.
+//   listen = the phone reads a short dialogue aloud (you can hear it twice), then you pick the answer
+//   write  = translate a sentence (the older kind of writing question)
 // The level you CHOSE in the interview is a guess. The test checks it:
-//   start at your level → pass (4 of 6)? go up one level, and again... → fail? that's the level to study.
+//   start at your level → pass (60% right)? go up one level, and again... → fail? that's the level to study.
 //   fail the first level? go down, until you pass one.
-// No AI needed: the code scores it. It can't hear you, so it doesn't measure listening or speaking.
+// No AI needed: the code scores it. It can't hear you, so it doesn't measure speaking.
 let placementTest = null;
 const ptProgress = $("#pt-progress");
 const ptText = $("#pt-text");
@@ -1511,7 +1518,7 @@ const ptCompose = $("#pt-compose");
 const ptInput = $("#pt-input");
 const ptSend = $("#pt-send");
 const ptOptions = $("#pt-options");
-const SKILLS = ["grammar", "vocabulary", "reading", "writing"];   // their names: lang/*.json → "skill.grammar"...
+const SKILLS = ["grammar", "vocabulary", "reading", "meaning", "listening", "writing"];   // their names: lang/*.json → "skill.grammar"...
 
 // A new order every time: [a, b, c] → [c, a, b]
 function shuffle(list) {
@@ -1532,34 +1539,73 @@ function promptFor(item) {
   return code ? item[code] : "";
 }
 
+// ---- Listening: the phone's own voice reads the text aloud (no internet, no cost) ----
+const VOICES = { es: "es-ES", en: "en-GB" };
+
+function canSpeak() {
+  return "speechSynthesis" in window && typeof SpeechSynthesisUtterance !== "undefined";
+}
+
+function speak(text) {
+  speechSynthesis.cancel();   // stop anything still playing
+  const voice = new SpeechSynthesisUtterance(text);
+  voice.lang = VOICES[learning()] || learning();
+  voice.rate = 0.9;           // a little slower than normal speech
+  speechSynthesis.speak(voice);
+}
+
 // Show one question and WAIT for the answer. Gives back true (right) or false (wrong / "no lo sé").
-function askItem(item) {
+// tap = true: a gap question shows answers to tap, not a box to type in (for beginners)
+function askItem(item, tap) {
   ptOptions.innerHTML = "";
   ptText.classList.toggle("hidden", !item.text);
   ptText.textContent = item.text || "";
   ptCompose.classList.add("hidden");
 
   return new Promise(answerWith => {
-    if (item.type === "write") {
-      // the sentence to translate, in your language · under it: "write it in Spanish", also in your language
-      setText(ptQuestion, promptFor(item), own("writing.label", language => ({ in: phrase(language, "in." + learning()) })));
+    const typed = answers => {   // a box to type in
       ptCompose.classList.remove("hidden");
       ptInput.value = "";
       ptInput.focus();
       const send = () => {
         if (!ptInput.value.trim()) return;
         ptSend.onclick = ptInput.onkeydown = null;
-        answerWith(isRightAnswer(ptInput.value, item.answers));
+        answerWith(isRightAnswer(ptInput.value, answers));
       };
       ptSend.onclick = send;
       ptInput.onkeydown = event => { if (event.key === "Enter") send(); };
-    } else {
-      setText(ptQuestion, item.q);
-      for (const option of shuffle([item.answer, ...item.wrong])) {
+    };
+    const tapped = (right, wrong) => {   // answers to tap, in a new order every time
+      for (const option of shuffle([right, ...wrong])) {
         const button = make("button", "", option);
-        button.onclick = () => answerWith(option === item.answer);
+        button.onclick = () => answerWith(option === right);
         ptOptions.append(button);
       }
+    };
+
+    if (item.type === "write") {
+      // the sentence to translate, in your language · under it: "write it in Spanish", also in your language
+      setText(ptQuestion, promptFor(item), own("writing.label", language => ({ in: phrase(language, "in." + learning()) })));
+      typed(item.answers);
+    } else if (item.type === "gap") {
+      const canTap = tap && item.wrong;
+      setText(ptQuestion, item.q, own(canTap ? "pt.gapTap" : "pt.gap"));
+      if (canTap) tapped(item.answers[0], item.wrong); else typed(item.answers);
+    } else if (item.type === "listen") {
+      let left = 2;   // you can hear it twice
+      const listen = make("button", "ready", `${t("pt.listen")} (${left})`, speaking.hint ? phrase(speaking.hint, "pt.listen") : "");
+      listen.onclick = () => {
+        speak(item.audio);
+        left--;
+        listen.firstChild.textContent = `${t("pt.listen")} (${left})`;
+        listen.disabled = left === 0;
+      };
+      ptOptions.append(listen);
+      setText(ptQuestion, item.q);
+      tapped(item.answer, item.wrong);
+    } else {
+      setText(ptQuestion, item.q);
+      tapped(item.answer, item.wrong);
     }
     // an honest "I don't know" is better than a lucky guess: it makes your level more accurate
     const skip = make("button", "back", ...tr("pt.idk"));
@@ -1568,25 +1614,29 @@ function askItem(item) {
       answerWith(false);
     };
     ptOptions.append(skip);
+  }).finally(() => {
+    if (canSpeak()) speechSynthesis.cancel();   // answered: stop the voice
   });
 }
 
-// One level: 6 questions. Stops early when you can't pass any more (kinder for beginners).
+// One level. Stops early when you can't pass any more (kinder for beginners).
+// Gives back { right, passed }. To pass you need 60% right (or the test's own "pass" number).
 async function testLevel(level, skills) {
-  const needed = placementTest.pass;
+  const items = level.items.filter(item => item.type !== "listen" || canSpeak());   // no voice on this phone: no listening questions
+  const needed = placementTest.passRatio ? Math.ceil(items.length * placementTest.passRatio) : placementTest.pass;
   let right = 0;
   let wrong = 0;
-  for (const [i, item] of level.items.entries()) {
-    setText(ptProgress, ...tr("pt.progress", { level: level.id, n: i + 1, total: level.items.length }));
-    const ok = await askItem(item);
+  for (const [i, item] of items.entries()) {
+    setText(ptProgress, ...tr("pt.progress", { level: level.id, n: i + 1, total: items.length }));
+    const ok = await askItem(item, level.id === "A1");
     if (ok) right++; else wrong++;
     const s = skills[item.skill] = skills[item.skill] || {};
     s[level.id] = s[level.id] || { right: 0, total: 0 };
     s[level.id].total++;
     if (ok) s[level.id].right++;
-    if (wrong > level.items.length - needed) break;   // too many wrong to pass: stop this level
+    if (wrong > items.length - needed) break;   // too many wrong to pass: stop this level
   }
-  return right;
+  return { right, passed: right >= needed };
 }
 
 // The whole test. Result: the level to STUDY (the first one you didn't pass).
@@ -1600,9 +1650,9 @@ async function runPlacement() {
   let placed = null;
 
   while (placed === null) {
-    const right = await testLevel(levels[i], skills);
+    const { right, passed } = await testLevel(levels[i], skills);
     scores[levels[i].id] = right;
-    if (right >= placementTest.pass) {                 // passed this level
+    if (passed) {                                      // passed this level
       if (direction === "down") placed = levels[i + 1].id;       // we came down from a failed one
       else if (i === levels.length - 1) placed = "C2";            // passed the last level in the test
       else { direction = "up"; i++; }
@@ -1616,6 +1666,7 @@ async function runPlacement() {
   const order = levels.map(l => l.id);
   const skillLevels = {};
   for (const skill of SKILLS) {
+    if (!skills[skill]) continue;   // this skill wasn't in the test
     const passed = order.filter(id => skills[skill] && skills[skill][id] && skills[skill][id].right * 2 >= skills[skill][id].total);
     skillLevels[skill] = passed.length ? passed[passed.length - 1] : null;
   }
@@ -1682,7 +1733,7 @@ function showPlacementResult(result) {
 
 // "gramática: A2" … as [main, hint] lines, for the result screen
 function placementLines(result) {
-  return SKILLS.map(skill => {
+  return SKILLS.filter(skill => skill in result.skills).map(skill => {
     const line = language => `${phrase(language, "skill." + skill)}: ${result.skills[skill] || phrase(language, "pt.below")}`;
     return [line(speaking.main), speaking.hint ? line(speaking.hint) : ""];
   });
@@ -1690,10 +1741,12 @@ function placementLines(result) {
 
 // For Profe (the AI)
 function placementContext() {
+  if (!placementTest) return "\nPlacement test: this language has none in the app yet. Assess the level in conversation (the level above is the learner's own guess).";
   const p = profile && profile.placement;
   if (!p) return "\nPlacement test: not taken yet (the level above is the learner's own guess).";
-  const skills = SKILLS.map(s => `${s} ${p.skills[s] || "below A1"}`).join(", ");
-  return `\nPlacement test (${p.date}): passed ${p.passed || "nothing yet"}, so the level to study is ${p.start}; highest level passed per skill: ${skills}. Listening and speaking were not measured: assess them in conversation.`;
+  const skills = SKILLS.filter(s => s in p.skills).map(s => `${s} ${p.skills[s] || "below A1"}`).join(", ");
+  const missing = "listening" in p.skills ? "Speaking was" : "Listening and speaking were";
+  return `\nPlacement test (${p.date}): passed ${p.passed || "nothing yet"}, so the level to study is ${p.start}; highest level passed per skill: ${skills}. ${missing} not measured: assess in conversation.`;
 }
 
 // ---------- 17. Profe with AI (the chat) ----------

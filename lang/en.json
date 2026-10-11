@@ -113,7 +113,7 @@
   "pt.zero": "you start from the beginning",
   "pt.below": "below A1",
   "pt.startAt": "you start at: {title}",
-  "pt.estimate": "it's an estimate: it can't measure speaking or listening. Profe adjusts it with you.",
+  "pt.estimate": "it's an estimate: it can't measure your speaking. Profe adjusts it with you.",
   "talk.placeholder": "write to Profe…",
   "talk.new": "↺ new conversation",
   "talk.hello": "Hi{name}! Send me a sentence you heard today, or ask me anything.",
@@ -202,5 +202,12 @@
   "topic.nuance": "nuance",
   "topic.connectors": "connectors",
   "topic.adjectives": "adjectives",
-  "topic.verbs": "verbs"
+  "topic.verbs": "verbs",
+  "skill.meaning": "meaning",
+  "skill.listening": "listening",
+  "pt.listen": "[ listen ]",
+  "pt.gap": "type the missing word",
+  "pt.gapTap": "choose the missing word",
+  "task.freeLesson": "lesson with Profe",
+  "lesson.free": "I'd like a lesson at my level."
 }
