@@ -636,8 +636,28 @@ button:active {
 }
 
 /* answers: one per line, easy to tap */
-#pt-options button:not(.back) {
+#pt-options button:not(.back):not(.word) {
   flex-basis: 100%;
+}
+
+/* "put the words in order": the sentence you're building, then one small button per word */
+#pt-options .built {
+  flex-basis: 100%;
+  margin: 0 0 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--line);
+  min-height: 1.6em;
+  font-size: 18px;
+  color: var(--accent);
+}
+
+#pt-options .word:disabled {
+  opacity: 0.3;
+}
+
+#pt-options .word.clear {
+  border: none;
+  color: var(--muted);
 }
 
 /* result: one line per skill */

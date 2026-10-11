@@ -210,5 +210,16 @@
   "pt.gapTap": "choose the missing word",
   "task.freeLesson": "lesson with Profe",
   "lesson.free": "I'd like a lesson at my level.",
-  "ai.busy": "the AI ({model}) is overloaded right now. Wait a minute and send again, or pick another model in ⚙."
+  "ai.busy": "the AI ({model}) is overloaded right now. Wait a minute and send again, or pick another model in ⚙.",
+  "ai.backup": "your model was overloaded: {model} answered",
+  "lesson.progress": "lesson · {title} · {n} of {total}",
+  "lesson.exit": "leave the lesson",
+  "lesson.tip": "key idea",
+  "lesson.right": "✓ correct!",
+  "lesson.wrong": "✗ the answer: {answer}",
+  "lesson.order": "put the words in order",
+  "lesson.clear": "[ clear ]",
+  "lesson.done": "✓ lesson completed: {right} of {total}",
+  "lesson.retry": "almost: {right} of {total}. Repeat the lesson to complete it.",
+  "lesson.again": "↺ repeat the lesson"
 }

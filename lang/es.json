@@ -210,5 +210,16 @@
   "pt.gapTap": "elige la palabra que falta",
   "task.freeLesson": "clase con Profe",
   "lesson.free": "Quiero una clase de mi nivel.",
-  "ai.busy": "la IA ({model}) está saturada ahora mismo. Espera un minuto y envía otra vez, o elige otro modelo en ⚙."
+  "ai.busy": "la IA ({model}) está saturada ahora mismo. Espera un minuto y envía otra vez, o elige otro modelo en ⚙.",
+  "ai.backup": "tu modelo estaba saturado: ha respondido {model}",
+  "lesson.progress": "clase · {title} · {n} de {total}",
+  "lesson.exit": "salir de la clase",
+  "lesson.tip": "idea clave",
+  "lesson.right": "✓ ¡bien!",
+  "lesson.wrong": "✗ la respuesta: {answer}",
+  "lesson.order": "ordena las palabras",
+  "lesson.clear": "[ borrar ]",
+  "lesson.done": "✓ clase completada: {right} de {total}",
+  "lesson.retry": "casi: {right} de {total}. Repite la clase para completarla.",
+  "lesson.again": "↺ repetir la clase"
 }

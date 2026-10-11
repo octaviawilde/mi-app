@@ -3,13 +3,13 @@
 //   1 settings · 2 page elements + state · 3 helpers · 4 saved data (+ migration from v1.5)
 //   5 loading · 6 today's queue · 7 review cards · 8 writing · 9 more practice · 10 backup
 //   11 screens · 12 progress · 13 today · 14 Profe's interview · 15 Profe's map (curriculum)
-//   16 placement test · 17 Profe with AI (chat) · 18 offline + updates · 19 start
+//   16 placement test + lessons · 17 Profe with AI (chat) · 18 offline + updates · 19 start
 // The code is in English so anyone can read it and contribute.
 // The text the learner SEES lives in lang/<code>.json (es, en, uk, it, ru): big = the language
 // they're learning, small hint under it = their own language. That's content, not code.
 
 // ---------- 1. Settings (change these numbers whenever you like) ----------
-const VERSION = "1.19";                      // change it every time you publish
+const VERSION = "1.20";                      // change it every time you publish
 const NEW_PER_DAY = 15;                     // new cards per day (when the profile doesn't say)
 const BOX_DAYS = [0, 0, 1, 3, 7, 14];       // days before a card comes back, by box (1–5)
 const NEW_PER_MINUTES = { 5: 5, 15: 10, 30: 15, 60: 20 };   // minutes per day (profile) → new cards per day
@@ -39,6 +39,7 @@ let profile = null;         // your profile, made in the interview with Profe
 let plan = null;            // today's plan (from Profe)
 let done = {};              // ticked tasks: { "2026-10-09": ["mission"] }
 let interview = null;       // Profe's interview questions (profe/interview.json)
+let lessons = null;         // written lessons that need no AI (profe/lessons/<language>.json)
 
 const UI_LANGUAGES = ["es", "en", "uk", "it", "ru"];   // the app's own text exists in these (lang/<code>.json)
 let strings = {};                                 // strings.es = { "nav.today": "hoy", ... }
@@ -323,6 +324,7 @@ async function start() {
 async function loadCourse() {
   curriculum = await loadJson(`profe/curriculum/${learning()}.json`);
   placementTest = await loadJson(`profe/placement/${learning()}.json`);
+  lessons = await loadJson(`profe/lessons/${learning()}.json`);
   let deck = migrateCards((await loadJson("cards.json")) || loadSaved("cards") || []);
   if (deck.length === 0) deck = await loadDecks();
   if (deck.length === 0) deck = migrateCards((await loadJson("sample.json")) || []);
@@ -1005,8 +1007,13 @@ function tick(task) {
     startPlacement();
     return;
   }
-  if (type === "lesson") {   // Profe marks it done on your map when you've shown you can do it
-    show("profe");
+  if (type === "lesson") {
+    const step = curriculum && currentStep();
+    if (plan.basic && hasLesson(step)) {   // a written lesson exists: no AI needed
+      startLesson(step);
+      return;
+    }
+    show("profe");   // otherwise Profe (the AI) teaches it, and marks it done on your map
     talkInput.value = task.free ? t("lesson.free") : t("lesson.start", { title: task.title || task.text.replace(/^clase con Profe: /, "") });
     talkInput.focus();
     return;
@@ -1591,6 +1598,28 @@ function askItem(item, tap) {
       const canTap = tap && item.wrong;
       setText(ptQuestion, item.q, own(canTap ? "pt.gapTap" : "pt.gap"));
       if (canTap) tapped(item.answers[0], item.wrong); else typed(item.answers);
+    } else if (item.type === "order") {
+      // tap the words in the right order. Above: the sentence in your language (if the lesson has it)
+      setText(ptQuestion, promptFor(item) || t("lesson.order"), own("lesson.order"));
+      const built = make("p", "built", "…");
+      const chosen = [];
+      const words = shuffle(item.answer.split(" ")).map(word => {
+        const button = make("button", "word", word);
+        button.onclick = () => {
+          chosen.push(word);
+          button.disabled = true;
+          built.textContent = chosen.join(" ");
+          if (chosen.length === words.length) answerWith(chosen.join(" ") === item.answer);
+        };
+        return button;
+      });
+      const clear = make("button", "word clear", own("lesson.clear"));
+      clear.onclick = () => {
+        chosen.length = 0;
+        built.textContent = "…";
+        for (const button of words) button.disabled = false;
+      };
+      ptOptions.append(built, ...words, clear);
     } else if (item.type === "listen") {
       let left = 2;   // you can hear it twice
       const listen = make("button", "ready", `${t("pt.listen")} (${left})`, speaking.hint ? phrase(speaking.hint, "pt.listen") : "");
@@ -1601,10 +1630,10 @@ function askItem(item, tap) {
         listen.disabled = left === 0;
       };
       ptOptions.append(listen);
-      setText(ptQuestion, item.q);
+      setText(ptQuestion, item.q, item.hint ? promptFor(item.hint) : "");
       tapped(item.answer, item.wrong);
     } else {
-      setText(ptQuestion, item.q);
+      setText(ptQuestion, item.q, item.hint ? promptFor(item.hint) : "");
       tapped(item.answer, item.wrong);
     }
     // an honest "I don't know" is better than a lucky guess: it makes your level more accurate
@@ -1637,6 +1666,89 @@ async function testLevel(level, skills) {
     if (wrong > items.length - needed) break;   // too many wrong to pass: stop this level
   }
   return { right, passed: right >= needed };
+}
+
+// ---- Lessons without AI ----
+// profe/lessons/<language>.json: for a step of the map, a written lesson the app can teach alone:
+//   phrases  = new sentences to read and hear (with their meaning in your language)
+//   note     = the key idea, explained in your language
+//   practice = questions the app checks itself (the same kinds as the test, + "order")
+// Get 70% right and the step is done on your map. No AI, no internet needed.
+const LESSON_PASS = 0.7;
+
+function hasLesson(step) {
+  return Boolean(lessons && step && lessons[step.id]);
+}
+
+// Show some buttons and WAIT for a tap. Gives back the key of the tapped one.
+function waitForTap(buttons) {
+  return new Promise(choose => {
+    for (const [key, main, hint, className] of buttons) {
+      const button = make("button", className || "", main, hint);
+      button.onclick = () => choose(key);
+      ptOptions.append(button);
+    }
+  });
+}
+
+async function startLesson(step) {
+  const lesson = lessons[step.id];
+  const total = lesson.phrases.length + (lesson.note ? 1 : 0) + lesson.practice.length;
+  let n = 0;
+  const nextScreen = () => {
+    setText(ptProgress, ...tr("lesson.progress", { title: step.title, n: ++n, total }));
+    ptText.classList.add("hidden");
+    ptCompose.classList.add("hidden");
+    ptOptions.innerHTML = "";
+  };
+  const next = ["next", ...tr("writing.next"), "ready"];
+  const exit = ["exit", ...tr("lesson.exit"), "back"];
+  show("placement");   // the same calm screen as the test: one thing at a time
+
+  // 1. the new sentences: read, listen, next
+  for (const sentence of lesson.phrases) {
+    nextScreen();
+    setText(ptQuestion, sentence.t, promptFor(sentence));
+    if (canSpeak()) {
+      const listen = make("button", "", ...tr("pt.listen"));
+      listen.onclick = () => speak(sentence.t);
+      ptOptions.append(listen);
+    }
+    if (await waitForTap([next, exit]) === "exit") return show("today");
+  }
+
+  // 2. the key idea, in your language
+  if (lesson.note) {
+    nextScreen();
+    setText(ptQuestion, ...tr("lesson.tip"));
+    ptText.textContent = promptFor(lesson.note) || lesson.note[learning()] || "";
+    ptText.classList.remove("hidden");
+    if (await waitForTap([next, exit]) === "exit") return show("today");
+  }
+
+  // 3. practice: the app checks each answer and shows the right one
+  let right = 0;
+  for (const item of lesson.practice) {
+    nextScreen();
+    const ok = await askItem(item, true);
+    if (ok) right++;
+    ptOptions.innerHTML = "";
+    ptCompose.classList.add("hidden");
+    const answer = item.answer || item.answers[0];
+    ptOptions.append(make("p", ok ? "now" : "caption warning", ...tr(ok ? "lesson.right" : "lesson.wrong", { answer })));
+    if (await waitForTap([next, exit]) === "exit") return show("today");
+  }
+
+  // 4. the result
+  const passed = right >= Math.ceil(lesson.practice.length * LESSON_PASS);
+  if (passed) markDone(step.id);
+  nextScreen();
+  setText(ptProgress, ...tr("lesson.progress", { title: step.title, n: total, total }));
+  setText(ptQuestion, ...tr(passed ? "lesson.done" : "lesson.retry", { right, total: lesson.practice.length }));
+  const home = ["home", ...tr("nav.today").map(text => text && "→ " + text), passed ? "ready" : ""];
+  const again = ["again", ...tr("lesson.again"), passed ? "" : "ready"];
+  if (await waitForTap(passed ? [home, again] : [again, home]) === "again") return startLesson(step);
+  show("today");
 }
 
 // The whole test. Result: the level to STUDY (the first one you didn't pass).
@@ -1782,7 +1894,9 @@ function readableError(key, values) {
 }
 
 const BUSY_CODES = [500, 502, 503, 529];   // "our computers are overloaded, try again"
-const BUSY_WAITS = [2000, 5000];           // wait 2 s, then 5 s, before giving up (3 tries in all)
+const BUSY_WAITS = [2000];                 // wait 2 s and try once more, before trying a backup model
+const BACKUP_KINDS = { gemini: /flash/, anthropic: /sonnet|haiku/ };   // quick models that make good backups
+const NOT_FOR_CHAT = /preview|exp|thinking|image|tts|live|audio|embedding/;
 const TALK_MEMORY = 20;   // how many recent messages the AI sees (more = better memory, more cost)
 
 let ai = loadSaved("ai");            // { provider, key, model, url }
@@ -1806,8 +1920,9 @@ function claudeOptions(model, body, headers) {
 }
 
 // Send the conversation, get Profe's answer as text. Each provider has its own format.
-async function askAI(system, messages) {
-  const { provider, key, model } = ai;
+// once = true: one try only (used for the backup models)
+async function askModel(system, messages, model, once) {
+  const { provider, key } = ai;
   let url, headers, body, read;
 
   if (provider === "anthropic") {
@@ -1845,7 +1960,7 @@ async function askAI(system, messages) {
   // with your key or your message. They usually pass in seconds, so wait a little and ask again.
   let response;
   let data;
-  for (const wait of [...BUSY_WAITS, null]) {
+  for (const wait of once ? [null] : [...BUSY_WAITS, null]) {
     try {
       response = await fetch(url, { method: "POST", headers, body: JSON.stringify(body) });
     } catch (error) {
@@ -1859,10 +1974,47 @@ async function askAI(system, messages) {
     const detail = (data.error && (data.error.message || data.error)) || response.statusText;
     if (response.status === 401 || response.status === 403) throw readableError("ai.badKey", { detail });
     if (response.status === 429) throw readableError("ai.limit", { detail });
-    if (BUSY_CODES.includes(response.status)) throw readableError("ai.busy", { model });
+    if (BUSY_CODES.includes(response.status)) {
+      const error = readableError("ai.busy", { model });
+      error.busy = true;   // askAI reads this: time to try a backup model
+      throw error;
+    }
     throw readableError("ai.error", { status: response.status, detail });
   }
   return read(data);
+}
+
+// Ask YOUR model. If it's overloaded, quietly try up to 2 other models your key can use.
+let answeredBy = null;   // the model that gave the last answer (it may be a backup one)
+
+async function askAI(system, messages) {
+  answeredBy = ai.model;
+  try {
+    return await askModel(system, messages, ai.model);
+  } catch (error) {
+    if (!error.busy) throw error;
+    for (const model of await backupModels()) {
+      try {
+        const answer = await askModel(system, messages, model, true);
+        answeredBy = model;
+        return answer;
+      } catch (alsoFailed) {
+        // this one is busy too (or your key can't use it): try the next
+      }
+    }
+    throw error;   // nobody answered: show "the AI is overloaded"
+  }
+}
+
+async function backupModels() {
+  const kind = BACKUP_KINDS[ai.provider];
+  if (!kind) return [];
+  try {
+    const models = await listModels(ai.provider, ai.key, ai.url);
+    return models.map(m => m.id).filter(id => id !== ai.model && kind.test(id) && !NOT_FOR_CHAT.test(id)).slice(0, 2);
+  } catch (error) {
+    return [];
+  }
 }
 
 function aiReady() {
@@ -2057,6 +2209,7 @@ async function sendToProfe() {
     applyActions(answer);
     typing.remove();
     showMessage(reply);
+    if (answeredBy !== ai.model) talkLog.append(make("p", "caption", ...tr("ai.backup", { model: answeredBy })));
   } catch (error) {
     talk.pop();   // not answered: take your message back, so you can send it again
     talkInput.value = text;

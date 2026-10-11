@@ -1,0 +1,86 @@
+{
+  "_note": "Written lessons for Spanish: the app teaches them alone, with no AI. Part of the Núcleo. One lesson per step of the map (the key is the step's id in profe/curriculum/es.json). phrases: 't' = the sentence in Spanish, then its meaning per language ('all' = the same for everyone). note: the key idea, per language. practice: choice / gap / listen / order questions; 'hint' = the question itself in the learner's language. 70% right marks the step done.",
+  "A1.0.1": {
+    "phrases": [
+      { "t": "casa, mesa, vino, sol, luna", "en": "house, table, wine, sun, moon", "uk": "дім, стіл, вино, сонце, місяць", "it": "casa, tavolo, vino, sole, luna", "ru": "дом, стол, вино, солнце, луна" },
+      { "t": "España, mañana, niño", "en": "Spain, tomorrow, child", "uk": "Іспанія, завтра, дитина", "it": "Spagna, domani, bambino", "ru": "Испания, завтра, ребёнок" },
+      { "t": "hola, hotel, ahora", "en": "hello, hotel, now", "uk": "привіт, готель, зараз", "it": "ciao, hotel, adesso", "ru": "привет, отель, сейчас" },
+      { "t": "me llamo, la calle, yo", "en": "my name is, the street, I", "uk": "мене звати, вулиця, я", "it": "mi chiamo, la strada, io", "ru": "меня зовут, улица, я" },
+      { "t": "jamón, gente, girar", "en": "ham, people, to turn", "uk": "шинка, люди, повертати", "it": "prosciutto, gente, girare", "ru": "ветчина, люди, поворачивать" },
+      { "t": "cena, cinco, zapato", "en": "dinner, five, shoe", "uk": "вечеря, п'ять, черевик", "it": "cena, cinque, scarpa", "ru": "ужин, пять, ботинок" }
+    ],
+    "note": {
+      "en": "Spanish is read the way it is written. The five vowels (a, e, i, o, u) always sound the same. The letter h is silent. A written accent (á, é, í, ó, ú) shows which part of the word is stressed.",
+      "uk": "Іспанською читають так, як пишуть. П'ять голосних (a, e, i, o, u) завжди звучать однаково. Літера h не вимовляється. Знак наголосу (á, é, í, ó, ú) показує, яка частина слова наголошена.",
+      "it": "Lo spagnolo si legge come si scrive. Le cinque vocali (a, e, i, o, u) suonano sempre uguali. La lettera h è muta. L'accento scritto (á, é, í, ó, ú) indica quale parte della parola è accentata.",
+      "ru": "По-испански читают так, как пишут. Пять гласных (a, e, i, o, u) всегда звучат одинаково. Буква h не произносится. Знак ударения (á, é, í, ó, ú) показывает, какая часть слова ударная.",
+      "es": "El español se lee como se escribe. Las cinco vocales suenan siempre igual. La h no suena. El acento escrito indica la sílaba fuerte."
+    },
+    "practice": [
+      { "type": "listen", "audio": "mañana", "q": "¿Qué palabra oyes?", "answer": "mañana", "wrong": ["manzana", "mamá"], "hint": {"en": "Which word do you hear?", "uk": "Яке слово ти чуєш?", "it": "Che parola senti?", "ru": "Какое слово ты слышишь?"} },
+      { "type": "listen", "audio": "calle", "q": "¿Qué palabra oyes?", "answer": "calle", "wrong": ["cable", "carne"], "hint": {"en": "Which word do you hear?", "uk": "Яке слово ти чуєш?", "it": "Che parola senti?", "ru": "Какое слово ты слышишь?"} },
+      { "type": "choice", "q": "hola: ¿qué letra no suena?", "answer": "h", "wrong": ["o", "l"], "hint": {"en": "hola: which letter is silent?", "uk": "hola: яка літера не вимовляється?", "it": "hola: quale lettera è muta?", "ru": "hola: какая буква не произносится?"} },
+      { "type": "gap", "q": "Espa_a", "answers": ["ñ"], "wrong": ["n", "m"] },
+      { "type": "listen", "audio": "jamón", "q": "¿Qué palabra oyes?", "answer": "jamón", "wrong": ["salmón", "jabón"], "hint": {"en": "Which word do you hear?", "uk": "Яке слово ти чуєш?", "it": "Che parola senti?", "ru": "Какое слово ты слышишь?"} },
+      { "type": "choice", "q": "café: ¿dónde está la fuerza?", "answer": "ca-FÉ", "wrong": ["CA-fe"], "hint": {"en": "café: which part is stressed?", "uk": "café: яка частина наголошена?", "it": "café: quale parte è accentata?", "ru": "café: какая часть ударная?"} },
+      { "type": "listen", "audio": "cinco", "q": "¿Qué palabra oyes?", "answer": "cinco", "wrong": ["cinta", "circo"], "hint": {"en": "Which word do you hear?", "uk": "Яке слово ти чуєш?", "it": "Che parola senti?", "ru": "Какое слово ты слышишь?"} },
+      { "type": "gap", "q": "_ola (hello)", "answers": ["h"], "wrong": ["j", "g"] }
+    ]
+  },
+  "A1.0.2": {
+    "phrases": [
+      { "t": "cero, uno, dos, tres, cuatro, cinco", "all": "0 · 1 · 2 · 3 · 4 · 5" },
+      { "t": "seis, siete, ocho, nueve, diez", "all": "6 · 7 · 8 · 9 · 10" },
+      { "t": "once, doce, trece, catorce, quince", "all": "11 · 12 · 13 · 14 · 15" },
+      { "t": "veinte, treinta, cuarenta, cincuenta, cien", "all": "20 · 30 · 40 · 50 · 100" },
+      { "t": "treinta y cinco", "all": "35" },
+      { "t": "Tengo veinte años.", "en": "I'm twenty years old.", "uk": "Мені двадцять років.", "it": "Ho vent'anni.", "ru": "Мне двадцать лет." },
+      { "t": "Son tres euros.", "en": "It's three euros.", "uk": "Це три євро.", "it": "Sono tre euro.", "ru": "Это три евро." }
+    ],
+    "note": {
+      "en": "From 31 on, tens and units are joined with «y»: treinta y uno, cuarenta y dos. To say your age, Spanish uses «tener» (to have): Tengo 20 años.",
+      "uk": "Від 31 десятки й одиниці з'єднуються словом «y»: treinta y uno, cuarenta y dos. Щоб сказати вік, іспанською вживають «tener» (мати): Tengo 20 años.",
+      "it": "Dal 31 in poi, decine e unità si uniscono con «y»: treinta y uno, cuarenta y dos. Per dire l'età si usa «tener» (avere), come in italiano: Tengo 20 años.",
+      "ru": "Начиная с 31 десятки и единицы соединяются словом «y»: treinta y uno, cuarenta y dos. Чтобы назвать возраст, по-испански используют «tener» (иметь): Tengo 20 años.",
+      "es": "Desde el 31, decenas y unidades se unen con «y». Para la edad se usa «tener»: Tengo 20 años."
+    },
+    "practice": [
+      { "type": "choice", "q": "siete", "answer": "7", "wrong": ["6", "9"] },
+      { "type": "choice", "q": "quince", "answer": "15", "wrong": ["5", "50"] },
+      { "type": "gap", "q": "treinta ___ cinco = 35", "answers": ["y"], "wrong": ["de", "con"] },
+      { "type": "listen", "audio": "cuarenta y dos", "q": "¿Qué número oyes?", "answer": "42", "wrong": ["24", "52"], "hint": {"en": "Which number do you hear?", "uk": "Яке число ти чуєш?", "it": "Che numero senti?", "ru": "Какое число ты слышишь?"} },
+      { "type": "listen", "audio": "Son doce euros.", "q": "¿Qué número oyes?", "answer": "12", "wrong": ["2", "20"], "hint": {"en": "Which number do you hear?", "uk": "Яке число ти чуєш?", "it": "Che numero senti?", "ru": "Какое число ты слышишь?"} },
+      { "type": "order", "answer": "Tengo treinta años.", "en": "I'm thirty years old.", "uk": "Мені тридцять років.", "it": "Ho trent'anni.", "ru": "Мне тридцать лет." },
+      { "type": "gap", "q": "___ veinte años.", "answers": ["Tengo"], "wrong": ["Soy", "Estoy"] },
+      { "type": "choice", "q": "100", "answer": "cien", "wrong": ["cinco", "diez"] }
+    ]
+  },
+  "A1.0.3": {
+    "phrases": [
+      { "t": "¿Qué es esto?", "en": "What is this?", "uk": "Що це?", "it": "Che cos'è questo?", "ru": "Что это?" },
+      { "t": "¿Dónde está el baño?", "en": "Where is the bathroom?", "uk": "Де туалет?", "it": "Dov'è il bagno?", "ru": "Где туалет?" },
+      { "t": "¿Cuánto cuesta?", "en": "How much is it?", "uk": "Скільки це коштує?", "it": "Quanto costa?", "ru": "Сколько это стоит?" },
+      { "t": "¿Cuándo abre?", "en": "When does it open?", "uk": "Коли відчиняється?", "it": "Quando apre?", "ru": "Когда открывается?" },
+      { "t": "¿Cómo se dice esto?", "en": "How do you say this?", "uk": "Як це сказати?", "it": "Come si dice questo?", "ru": "Как это сказать?" },
+      { "t": "¿Por qué?", "en": "Why?", "uk": "Чому?", "it": "Perché?", "ru": "Почему?" },
+      { "t": "¿Qué hora es?", "en": "What time is it?", "uk": "Котра година?", "it": "Che ore sono?", "ru": "Который час?" }
+    ],
+    "note": {
+      "en": "A Spanish question starts with ¿ and ends with ?. Question words always have a written accent: qué, dónde, cuánto, cuándo, cómo.",
+      "uk": "Іспанське запитання починається знаком ¿ і закінчується знаком ?. Питальні слова завжди мають знак наголосу: qué, dónde, cuánto, cuándo, cómo.",
+      "it": "Una domanda in spagnolo comincia con ¿ e finisce con ?. Le parole interrogative hanno sempre l'accento scritto: qué, dónde, cuánto, cuándo, cómo.",
+      "ru": "Испанский вопрос начинается знаком ¿ и заканчивается знаком ?. Вопросительные слова всегда пишутся со знаком ударения: qué, dónde, cuánto, cuándo, cómo.",
+      "es": "Una pregunta empieza con ¿ y termina con ?. Las palabras para preguntar llevan siempre acento: qué, dónde, cuánto, cuándo, cómo."
+    },
+    "practice": [
+      { "type": "gap", "q": "¿___ está el baño?", "answers": ["Dónde"], "wrong": ["Qué", "Cuánto"] },
+      { "type": "gap", "q": "¿___ cuesta?", "answers": ["Cuánto"], "wrong": ["Cuándo", "Cómo"] },
+      { "type": "listen", "audio": "¿Dónde está el baño?", "q": "¿Qué pregunta oyes?", "answer": "¿Dónde está el baño?", "wrong": ["¿Cuánto cuesta el baño?", "¿Qué es el baño?"], "hint": {"en": "Which question do you hear?", "uk": "Яке запитання ти чуєш?", "it": "Che domanda senti?", "ru": "Какой вопрос ты слышишь?"} },
+      { "type": "gap", "q": "¿___ hora es?", "answers": ["Qué"], "wrong": ["Dónde", "Cómo"] },
+      { "type": "order", "answer": "¿Cómo se dice esto?", "en": "How do you say this?", "uk": "Як це сказати?", "it": "Come si dice questo?", "ru": "Как это сказать?" },
+      { "type": "listen", "audio": "¿Cuánto cuesta?", "q": "¿Qué pregunta oyes?", "answer": "¿Cuánto cuesta?", "wrong": ["¿Cuándo abre?", "¿Cómo se dice?"], "hint": {"en": "Which question do you hear?", "uk": "Яке запитання ти чуєш?", "it": "Che domanda senti?", "ru": "Какой вопрос ты слышишь?"} },
+      { "type": "gap", "q": "¿___ abre el banco?", "answers": ["Cuándo"], "wrong": ["Qué", "Dónde"] },
+      { "type": "order", "answer": "¿Dónde está el hotel?", "en": "Where is the hotel?", "uk": "Де готель?", "it": "Dov'è l'hotel?", "ru": "Где отель?" }
+    ]
+  }
+}
