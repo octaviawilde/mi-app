@@ -5,10 +5,11 @@
 //   11 screens · 12 progress · 13 today · 14 Profe's interview · 15 Profe's map (curriculum)
 //   16 placement test · 17 Profe with AI (chat) · 18 offline + updates · 19 start
 // The code is in English so anyone can read it and contribute.
-// The text the learner SEES is Spanish (with small English hints): that's content, not code.
+// The text the learner SEES lives in lang/<code>.json (es, en, uk, it): big = the language
+// they're learning, small hint under it = their own language. That's content, not code.
 
 // ---------- 1. Settings (change these numbers whenever you like) ----------
-const VERSION = "1.15";                      // change it every time you publish
+const VERSION = "1.16";                      // change it every time you publish
 const NEW_PER_DAY = 15;                     // new cards per day (when the profile doesn't say)
 const BOX_DAYS = [0, 0, 1, 3, 7, 14];       // days before a card comes back, by box (1–5)
 const NEW_PER_MINUTES = { 5: 5, 15: 10, 30: 15, 60: 20 };   // minutes per day (profile) → new cards per day
@@ -39,6 +40,10 @@ let plan = null;            // today's plan (from Profe)
 let done = {};              // ticked tasks: { "2026-10-09": ["mission"] }
 let interview = null;       // Profe's interview questions (profe/interview.json)
 
+const UI_LANGUAGES = ["es", "en", "uk", "it"];   // the app's own text exists in these (lang/<code>.json)
+let strings = {};                                 // strings.es = { "nav.today": "hoy", ... }
+let speaking = { main: "en", hint: null };        // main = the big text · hint = the small text under it
+
 // ---------- 3. Helpers ----------
 // A date as "2026-10-09". day() = today, day(3) = in 3 days
 function day(daysAhead = 0) {
@@ -47,23 +52,103 @@ function day(daysAhead = 0) {
   return d.toLocaleDateString("sv");   // "sv" (Swedish) writes dates as YYYY-MM-DD
 }
 
-// Write Spanish on the screen + a small English hint under it.
+// Write a text on the screen + a small hint under it.
 // The hint lives in data-hint, and the CSS shows it (style.css → "Hints").
-function setText(element, es, en) {
-  element.textContent = es;
-  if (en) {
-    element.dataset.hint = en;
+function setText(element, main, hint) {
+  element.textContent = main;
+  if (hint && hint !== main) {
+    element.dataset.hint = hint;
   } else {
     delete element.dataset.hint;   // no hint for this text
   }
 }
 
-// Create a piece of the page: make("p", "heading", "por tema", "by topic")
-function make(tag, className, es, en) {
+// Create a piece of the page: make("p", "heading", "por tema", "за темами") → text + hint under it
+function make(tag, className, main, hint) {
   const element = document.createElement(tag);
   if (className) element.className = className;
-  if (es !== undefined) setText(element, es, en);
+  if (main !== undefined) setText(element, main, hint);
   return element;
+}
+
+// ---- Languages ----
+// Every text of the app has a key ("nav.today") and lives in lang/<code>.json, once per language.
+// The app shows two languages at once:
+//   main = the language you're LEARNING (big)   ·   hint = YOUR language (small, under it)
+// A Ukrainian learning Spanish sees "hoy" with "сьогодні" under it.
+
+// One text in one language. {gaps} are filled in: phrase("es", "box.n", { box: 2 }) → "caja 2"
+// values can also be a function, when the words to fill in depend on the language.
+function phrase(language, key, values) {
+  const text = (strings[language] && strings[language][key]) || (strings.en && strings.en[key]) || key;
+  const filled = typeof values === "function" ? values(language) : values || {};
+  return text.replace(/\{(\w+)\}/g, (gap, name) => (filled[name] === undefined ? "" : filled[name]));
+}
+
+// t = the text in the main language · tr = both: [main, hint]
+// own = in YOUR language: for places with no room for a hint (lists to choose from, grey text inside a box)
+function t(key, values) {
+  return phrase(speaking.main, key, values);
+}
+
+function tr(key, values) {
+  return [t(key, values), speaking.hint ? phrase(speaking.hint, key, values) : ""];
+}
+
+function own(key, values) {
+  return phrase(speaking.hint || speaking.main, key, values);
+}
+
+// Content written in several languages ({ es: "…", en: "…", uk: "…" }): pick one / pick [main, hint]
+function pick(item, language) {
+  return item[language] || item.all || item.en || "";
+}
+
+function both(item) {
+  return [pick(item, speaking.main), speaking.hint ? pick(item, speaking.hint) : ""];
+}
+
+// Content that only has an English hint (your imported cards, the curriculum): show it if you use hints
+function contentHint(english) {
+  return speaking.hint && speaking.main !== "en" ? english || "" : "";
+}
+
+// What a card means, in your language when the card has it
+function meaning(c) {
+  return c[speaking.hint] || c.en;
+}
+
+// The language you're learning ("es")
+function learning() {
+  return (profile && profile.learning) || draft.learning || "es";
+}
+
+// The phone's language, if the app speaks it ("uk-UA" → "uk")
+function deviceLanguage() {
+  const code = (navigator.language || "en").slice(0, 2);
+  return UI_LANGUAGES.includes(code) ? code : "en";
+}
+
+// Decide main + hint from a profile (or from the answers so far, during the interview)
+function setLanguages(p) {
+  p = p || {};
+  const yours = p.ui || (UI_LANGUAGES.includes(p.hints) ? p.hints : deviceLanguage());
+  const main = UI_LANGUAGES.includes(p.learning) ? p.learning : yours;
+  let hint = p.hints === undefined ? yours : p.hints;   // not chosen yet? your own language
+  if (hint === main || !UI_LANGUAGES.includes(hint)) hint = null;   // "none", or the same as main: no hints
+  speaking = { main, hint };
+  document.documentElement.lang = main;
+  translatePage();
+}
+
+// The fixed texts of index.html: each one says which key it shows (data-t="nav.today")
+function translatePage() {
+  for (const element of document.querySelectorAll("[data-t]")) setText(element, ...tr(element.dataset.t));
+  for (const element of document.querySelectorAll("[data-t-main]")) element.textContent = t(element.dataset.tMain);
+  for (const element of document.querySelectorAll("[data-t-placeholder]")) element.placeholder = own(element.dataset.tPlaceholder);
+  for (const element of document.querySelectorAll("[data-t-hint]")) {   // a symbol (→) with only a hint
+    setText(element, element.textContent, speaking.hint ? phrase(speaking.hint, element.dataset.tHint) : "");
+  }
 }
 
 // Read a JSON file from the app folder. If it isn't there, return null (no crash).
@@ -203,6 +288,8 @@ function migrateStorage() {
 //   3) the sample deck, for anyone trying the app for the first time
 async function start() {
   migrateStorage();
+  const texts = await Promise.all(UI_LANGUAGES.map(code => loadJson(`lang/${code}.json`)));   // all 4 at once
+  UI_LANGUAGES.forEach((code, i) => { strings[code] = texts[i] || {}; });
   progress = migrateProgress(loadSaved("progress") || {});
   done = migrateDone(loadSaved("done") || {});
   profile = migrateProfile(loadSaved("profile"));
@@ -214,7 +301,7 @@ async function start() {
   curriculum = await loadJson(`profe/curriculum/${(profile && profile.learning) || "es"}.json`);   // Profe's map
   placementTest = await loadJson(`profe/placement/${(profile && profile.learning) || "es"}.json`);
 
-  applyHints();
+  setLanguages(profile);
   showName();
   buildQueue();
   nextCard();
@@ -271,9 +358,9 @@ function nextCard() {
   if (queue.length === 0) freePractice = false;   // the end of free practice = back to normal
 
   if (freePractice) {
-    setText(statusLine, `práctica libre: ${queue.length} · tus cajas no cambian`, "free practice · your boxes don't change");
+    setText(statusLine, ...tr("status.free", { n: queue.length }));
   } else {
-    setText(statusLine, `para hoy: ${queue.length} · aprendidas: ${learnedCount()}/${cards.length}`, "for today · learned");
+    setText(statusLine, ...tr("status.today", { n: queue.length, learned: learnedCount(), total: cards.length }));
   }
 
   // recognition done → writing practice (if there's any today)
@@ -284,8 +371,8 @@ function nextCard() {
   }
 
   if (queue.length === 0) {
-    setText(question, "✓ todo hecho por hoy", "all done for today");
-    setText(answer, "¿quieres más?_", "want more?");
+    setText(question, ...tr("review.done"));
+    setText(answer, ...tr("review.more"));
     answer.classList.remove("hidden");
     tapHint.classList.add("hidden");
     answers.classList.add("hidden");
@@ -297,7 +384,7 @@ function nextCard() {
   more.classList.add("hidden");
   current = queue[0];   // the first card in the queue
   setText(question, current.es);   // no hint here: that would give away the answer!
-  setText(answer, current.en + "\n" + current.example);
+  setText(answer, meaning(current) + "\n" + current.example);
   answer.classList.add("hidden");
   tapHint.classList.remove("hidden");
   answers.classList.add("hidden");
@@ -313,11 +400,12 @@ function boxBar(box) {
 function showBox() {
   const p = progress[current.id];
   if (!p) {
-    setText(boxLabel, "nueva", "new word");
+    setText(boxLabel, ...tr("box.new"));
     return;
   }
   const box = p.box || 1;
-  setText(boxLabel, `caja ${box} ${boxBar(box)}`, `box ${box} of 5`);
+  const [name, hint] = tr("box.n", { box });
+  setText(boxLabel, `${name} ${boxBar(box)}`, hint);
 }
 
 // Flip: show the answer and the 4 answer buttons
@@ -372,7 +460,7 @@ for (const button of answers.querySelectorAll("button")) {
   button.addEventListener("click", () => rate(Number(button.dataset.level)));
 }
 
-// ---------- 8. Writing (English → type the Spanish) ----------
+// ---------- 8. Writing (see the meaning → type the word) ----------
 const writingCard = $("#writing-card");
 const writingBox = $("#writing-box");
 const writingQuestion = $("#writing-question");
@@ -422,21 +510,16 @@ function editDistance(a, b) {
 }
 
 // Check what you wrote. Fair, not picky: 3 = perfect · 1 = almost · 0 = not yet
+// key = which text to show ("grade.perfect" → "✓ ¡perfecto!")
 function gradeWriting(written, c) {
   const w = normalize(written);
   const options = [normalize(c.es), ...c.es.split("/").map(normalize)];   // "sucio / sucia" → either one
-  if (w === "") return { level: 0, es: "todavía no", en: "not yet" };
-  if (options.includes(w)) return { level: 3, es: "✓ ¡perfecto!", en: "perfect!" };
-  if (options.some(o => stripAccents(o) === stripAccents(w))) {
-    return { level: 1, es: "~ casi: mira los acentos", en: "almost: check the accents (á é í ó ú ñ)" };
-  }
-  if (options.some(o => stripArticle(o) !== o && stripArticle(o) === w)) {
-    return { level: 1, es: "~ casi: falta el artículo", en: "almost: the article (el/la/los/las) is missing" };
-  }
-  if (options.some(o => o.length >= 5 && editDistance(stripAccents(o), stripAccents(w)) === 1)) {
-    return { level: 1, es: "~ casi: una letra", en: "almost: one letter is different" };
-  }
-  return { level: 0, es: "✗ todavía no", en: "not yet" };
+  if (w === "") return { level: 0, key: "grade.empty" };
+  if (options.includes(w)) return { level: 3, key: "grade.perfect" };
+  if (options.some(o => stripAccents(o) === stripAccents(w))) return { level: 1, key: "grade.accents" };
+  if (options.some(o => stripArticle(o) !== o && stripArticle(o) === w)) return { level: 1, key: "grade.article" };
+  if (options.some(o => o.length >= 5 && editDistance(stripAccents(o), stripAccents(w)) === 1)) return { level: 1, key: "grade.letter" };
+  return { level: 0, key: "grade.no" };
 }
 
 function hideWriting() {
@@ -449,7 +532,9 @@ function hideWriting() {
 function showWriting() {
   currentWriting = writingQueue[0];
   writingGrade = null;
-  setText(statusLine, `escribir: ${writingQueue.length} · aprendidas: ${learnedCount()}/${cards.length}`, "writing · learned");
+  setText(statusLine, ...tr("status.writing", { n: writingQueue.length, learned: learnedCount(), total: cards.length }));
+  setText($("#writing-label"), ...tr("writing.label", language => ({ in: phrase(language, "in." + learning()) })));   // "escríbelo en español"
+  $("#writing-tip").classList.toggle("hidden", learning() !== "es");   // the accent tip is only for Spanish
   card.classList.add("hidden");
   answers.classList.add("hidden");
   more.classList.add("hidden");
@@ -458,16 +543,17 @@ function showWriting() {
 
   const w = progress[currentWriting.id].writing;
   if (w) {
-    setText(writingBox, `escritura · caja ${w.box} ${boxBar(w.box)}`, `writing · box ${w.box} of 5`);
+    const [name, hint] = tr("writing.box", { box: w.box });
+    setText(writingBox, `${name} ${boxBar(w.box)}`, hint);
   } else {
-    setText(writingBox, "escritura · nueva", "writing · new");
+    setText(writingBox, ...tr("writing.new"));
   }
-  setText(writingQuestion, currentWriting.en);
+  setText(writingQuestion, meaning(currentWriting));
   writingInput.value = "";
   writingInput.readOnly = false;
   result.classList.add("hidden");
   solution.classList.add("hidden");
-  setText(writingAction, "comprobar", "check");
+  setText(writingAction, ...tr("writing.check"));
   writingInput.focus();
 }
 
@@ -478,12 +564,12 @@ function writingStep() {
     const grade = gradeWriting(writingInput.value, currentWriting);
     writingGrade = grade.level;
     writingInput.readOnly = true;   // keep what you wrote visible, but locked
-    setText(result, grade.es, grade.en);
+    setText(result, ...tr(grade.key));
     result.className = "result " + (grade.level === 3 ? "good" : grade.level === 1 ? "almost" : "bad");
     setText(solution, currentWriting.es + "\n" + currentWriting.example);
     solution.classList.remove("hidden");
     countCorrect.classList.toggle("hidden", grade.level === 3);
-    setText(writingAction, "siguiente →", "next");
+    setText(writingAction, ...tr("writing.next"));
   } else {
     saveWriting(writingGrade);
   }
@@ -525,7 +611,7 @@ countCorrect.addEventListener("click", () => saveWriting(3));   // you were righ
 function moreNew() {
   const newCards = cards.filter(c => !progress[c.id]).slice(0, 5);
   if (newCards.length === 0) {
-    setText(statusLine, "¡ya has visto todas tus tarjetas!", "you've already seen all your cards!");
+    setText(statusLine, ...tr("more.none"));
     return;
   }
   freePractice = false;
@@ -537,7 +623,7 @@ function moreNew() {
 function startFreePractice() {
   const seen = cards.filter(c => progress[c.id]);
   if (seen.length === 0) {
-    setText(statusLine, "todavía no has visto ninguna tarjeta", "you haven't seen any cards yet");
+    setText(statusLine, ...tr("free.none"));
     return;
   }
   const difficulty = c => progress[c.id].wrong - progress[c.id].right;   // more ✗ = harder
@@ -565,9 +651,9 @@ async function exportBackup() {
   if (navigator.canShare && navigator.canShare({ files: [file] })) {
     try {
       await navigator.share({ files: [file] });
-      setText(statusLine, "✓ backup exportado", "backup saved");
+      setText(statusLine, ...tr("backup.saved"));
     } catch (error) {
-      setText(statusLine, "backup cancelado", "backup cancelled");
+      setText(statusLine, ...tr("backup.cancelled"));
     }
     return;
   }
@@ -576,7 +662,7 @@ async function exportBackup() {
   link.href = URL.createObjectURL(file);
   link.download = fileName;
   link.click();
-  setText(statusLine, "✓ backup exportado", "backup saved");
+  setText(statusLine, ...tr("backup.saved"));
 }
 
 // Import: read a file and use what's inside. Old (Spanish) files work too.
@@ -588,14 +674,14 @@ async function importFile() {
   if (!file) return;
   try {
     const data = JSON.parse(await file.text());
-    const found = [];   // what we found, for the message
+    const found = [];   // what we found, for the message: [key, values]
 
     const newCards = data.cards || data.tarjetas;
     if (newCards) {
       const deck = migrateCards(newCards);
       save("cards", deck);
       setCards(deck);   // Profe's cards stay
-      found.push(`${deck.length} tarjetas`);
+      found.push(["import.cards", { n: deck.length }]);
     }
     if (data.profeCards) {
       const known = new Set(profeCards.map(c => c.id));
@@ -603,7 +689,7 @@ async function importFile() {
       profeCards = [...profeCards, ...added];
       save("profeCards", profeCards);
       setCards(cards.filter(c => !isFromProfe(c)));
-      if (added.length) found.push(`${added.length} tarjetas de Profe`);
+      if (added.length) found.push(["import.profeCards", { n: added.length }]);
     }
     if (data.map && data.map.done) {
       map = { ...map, ...data.map, done: { ...data.map.done, ...map.done } };   // steps done on either device stay done
@@ -616,7 +702,7 @@ async function importFile() {
     if (data.plan) {
       plan = migratePlan(data.plan);
       save("plan", plan);
-      found.push("plan de hoy");
+      found.push(["import.plan"]);
     }
     const theirProgress = data.progress || data.progreso;
     if (theirProgress) {
@@ -631,14 +717,14 @@ async function importFile() {
         }
       }
       save("progress", progress);
-      found.push(`progreso de ${changes} tarjetas`);
+      found.push(["import.progress", { n: changes }]);
     }
     const theirProfile = migrateProfile(data.profile || data.perfil);
     if (theirProfile && (!profile || (theirProfile.updated || "") > (profile.updated || ""))) {
       profile = theirProfile;   // the profile travels with the backup (the newest one wins)
       save("profile", profile);
-      applyHints();
-      found.push("tu ficha");
+      setLanguages(profile);
+      found.push(["settings.profile"]);
     }
     if (found.length === 0) throw new Error("not a mi-app file");
 
@@ -646,9 +732,9 @@ async function importFile() {
     buildQueue();
     nextCard();
     show("today");
-    setText(statusLine, `✓ importado: ${found.join(" · ")}`, "imported");
+    setText(statusLine, ...tr("import.ok", language => ({ what: found.map(([key, values]) => phrase(language, key, values)).join(" · ") })));
   } catch (error) {
-    setText(statusLine, "✗ ese archivo no es de mi-app", "that file is not a mi-app file");
+    setText(statusLine, ...tr("import.bad"));
   }
   fileInput.value = "";   // so the same file can be imported again
 }
@@ -702,7 +788,7 @@ navButtons.settings.addEventListener("click", () => show("settings"));
 // ---------- 12. Progress screen ----------
 const report = $("#report");
 
-// English names of the topics (the topic names are Spanish content, from your cards)
+// English names of the topics (the topic names are content, from your cards)
 const TOPICS_EN = {
   saludos: "greetings", animales: "animals", adjetivos: "adjectives", verbos: "verbs",
   "en clase": "in class", "básicas": "basics", planes: "plans", fiesta: "party",
@@ -740,13 +826,13 @@ function drawProgress() {
   // 1. Three big numbers at the top
   const summary = make("div", "summary");
   const stats = [
-    [learned, "aprendidas", "learned"],
-    [seen, "vistas", "seen"],
-    [leftToday(), "para hoy", "for today"],
+    [learned, "stat.learned"],
+    [seen, "stat.seen"],
+    [leftToday(), "stat.today"],
   ];
-  for (const [number, es, en] of stats) {
+  for (const [number, key] of stats) {
     const stat = make("div", "stat");
-    stat.append(make("div", "number", String(number)), make("div", "label", es, en));
+    stat.append(make("div", "number", String(number)), make("div", "label", ...tr(key)));
     summary.append(stat);
   }
   report.append(summary);
@@ -754,13 +840,13 @@ function drawProgress() {
   // writing progress, one quiet line
   const practised = cards.filter(c => progress[c.id] && progress[c.id].writing);
   const written = practised.filter(c => progress[c.id].writing.box >= 3).length;
-  const writingLine = make("p", "caption", `✍ escritura: ${practised.length} practicadas · ${written} aprendidas`, "writing: practised · learned");
+  const writingLine = make("p", "caption", ...tr("progress.writing", { practised: practised.length, learned: written }));
   writingLine.style.marginTop = "16px";
   report.append(writingLine);
 
   // 2. By topic: one row each (name | bar | count)
-  report.append(make("h2", "heading", "por tema", "by topic"));
-  report.append(make("p", "caption", "█ aprendida · ▒ vista · ░ nueva", "learned · seen · new"));
+  report.append(make("h2", "heading", ...tr("progress.byTopic")));
+  report.append(make("p", "caption", ...tr("progress.legend")));
   const topics = {};   // group the cards: { animales: [...], verbos: [...], ... }
   for (const c of cards) {
     if (!topics[c.topic]) topics[c.topic] = [];
@@ -771,7 +857,7 @@ function drawProgress() {
     const learnedHere = list.filter(c => stateOf(c) === "learned").length;
     const row = make("div", "row");
     row.append(
-      make("span", "topic", topic, TOPICS_EN[topic]),
+      make("span", "topic", topic === "de Profe" ? t("topic.profe") : topic, contentHint(TOPICS_EN[topic])),
       bar(list),
       make("span", "count", `${learnedHere}/${list.length}`),
     );
@@ -779,18 +865,18 @@ function drawProgress() {
   }
 
   // 3. Weak spots: cards you got wrong that aren't learned yet, most ✗ first
-  report.append(make("h2", "heading", "puntos débiles", "weak spots"));
+  report.append(make("h2", "heading", ...tr("progress.weak")));
   const weak = cards
     .filter(c => progress[c.id] && progress[c.id].wrong > 0 && stateOf(c) !== "learned")
     .sort((x, y) => progress[y.id].wrong - progress[x.id].wrong)
     .slice(0, 7);
   if (weak.length === 0) {
-    report.append(make("p", "empty", "ninguno todavía", "none yet"));
+    report.append(make("p", "empty", ...tr("progress.none")));
   }
   const ul = make("ul", "weak");
   for (const c of weak) {
     const li = make("li");
-    li.append(make("span", "misses", `✗${progress[c.id].wrong}`), make("span", "word", c.es, c.en));
+    li.append(make("span", "misses", `✗${progress[c.id].wrong}`), make("span", "word", c.es, meaning(c)));
     ul.append(li);
   }
   report.append(ul);
@@ -812,54 +898,47 @@ function showName() {
 // No plan file from Profe? Then the app makes a simple one from your profile
 function basicPlan() {
   const hour = new Date().getHours();
-  const [es, en] = hour < 14 ? ["Buenos días", "good morning"] : hour < 20 ? ["Buenas tardes", "good afternoon"] : ["Buenas noches", "good evening"];
-  return {
-    date: day(), from: "Profe", name: profile.name, basic: true,
-    greeting: `¡${es}, ${profile.name}!`, greeting_en: en,
-    tasks: [
-      { type: "cards", text: "repasa tus tarjetas", en: "review your cards" },
-      ...(placementTest && !profile.placement && profile.level !== "pre-A1"
-        ? [{ type: "placement", text: "haz la prueba de nivel (5 min)", en: "take the placement test (5 min)" }] : []),
-      ...lessonTask(),
-    ],
+  const moment = hour < 14 ? "morning" : hour < 20 ? "afternoon" : "evening";
+  const [greeting, greetingHint] = tr(`greeting.${moment}`, { name: profile.name });
+  const task = (type, key, values, more) => {
+    const [text, hint] = tr(key, values);
+    return { type, text, hint, en: phrase("en", key, values), ...more };   // en: what Profe (the AI) reads
   };
-}
-
-// Today's lesson from your map (when the plan comes from the app, not from Victoria's bridge)
-function lessonTask() {
-  const step = curriculum && currentStep();
-  if (!step) return [];
-  return [{ type: "lesson", text: `clase con Profe: ${step.title}`, en: `lesson with Profe: ${step.review ? "review + mini-test" : step.cando}` }];
+  const tasks = [task("cards", "task.cards", { n: leftToday() })];
+  if (placementTest && !profile.placement && profile.level !== "pre-A1") tasks.push(task("placement", "task.placement"));
+  const step = curriculum && currentStep();   // today's lesson, from your map
+  if (step) {
+    const title = language => ({ title: language === speaking.main ? step.title : step.en || step.title });
+    tasks.push(task("lesson", "task.lesson", title, { title: step.title }));
+  }
+  return { date: day(), from: "Profe", name: profile.name, basic: true, greeting, greetingHint, tasks };
 }
 
 function drawToday() {
   taskList.innerHTML = "";   // empty the list, then fill it again
   if (profile && (!plan || plan.basic)) plan = basicPlan();   // the simple plan is made fresh each time
   if (!plan) {
-    setText(greeting, "sin plan de Profe todavía_", "no plan from Profe yet");
+    setText(greeting, ...tr("today.noplan"));
     planNote.textContent = "";
     return;
   }
   const today = day();
   const ticked = done[today] || [];
-  setText(greeting, plan.greeting, plan.greeting_en);
+  // a plan made by the app brings its own hints; a plan from a file (Victoria's bridge) brings English ones
+  setText(greeting, plan.greeting, plan.basic ? plan.greetingHint : contentHint(plan.greeting_en));
 
   for (const task of plan.tasks) {
     let isDone = ticked.includes(task.type);
     let text = task.text;
     if (task.type === "cards") {   // the app knows this one by itself
       isDone = leftToday() === 0;
-      text = `${task.text} (${leftToday()} para hoy)`;
+      if (!plan.basic) text = `${task.text} (${leftToday()} para hoy)`;
     }
-    const li = make("li", isDone ? "done" : "", `${isDone ? "[x]" : "[ ]"} ${text}`, task.en);
+    const li = make("li", isDone ? "done" : "", `${isDone ? "[x]" : "[ ]"} ${text}`, plan.basic ? task.hint : contentHint(task.en));
     li.addEventListener("click", () => tick(task));
     taskList.append(li);
   }
-  if (plan.date === today) {
-    setText(planNote, `plan de ${plan.from} · hoy`, `plan from ${plan.from} · today`);
-  } else {
-    setText(planNote, `plan de ${plan.from} · del ${plan.date}`, `plan from ${plan.from} · from ${plan.date}`);
-  }
+  setText(planNote, ...tr(plan.date === today ? "today.from" : "today.fromDate", { from: plan.from, date: plan.date }));
 }
 
 // Tap a task: cards → the review; lesson → Profe (ready to start); the others tick on / off
@@ -875,7 +954,7 @@ function tick(task) {
   }
   if (type === "lesson") {   // Profe marks it done on your map when you've shown you can do it
     show("profe");
-    talkInput.value = `Quiero hacer mi lección: ${task.text.replace(/^clase con Profe: /, "")}`;
+    talkInput.value = t("lesson.start", { title: task.title || task.text.replace(/^clase con Profe: /, "") });
     talkInput.focus();
     return;
   }
@@ -896,34 +975,28 @@ const chatCompose = $("#chat-compose");
 const chatInput = $("#chat-input");
 const chatSend = $("#chat-send");
 let draft = {};              // your answers so far
-let askingAbout = null;      // the language Profe is asking about right now ("¿Qué tal hablas inglés?")
+let askingAbout = null;      // the language Profe is asking about right now ("inglés: ¿qué tal lo hablas?")
 
-// Hints on or off, from your profile ("none" = no hints)
-function applyHints() {
-  document.body.classList.toggle("no-hints", Boolean(profile && profile.hints === "none"));
-}
-
-// A language's name: languageName("it") → "italiano" (or "Italian" with "en")
-function languageName(code, inLanguage = "es") {
-  const language = interview.languages[code];
-  return language ? language[inLanguage] : code;
+// A language's name: languageName("it", "es") → "italiano" · languageName("it", "en") → "Italian"
+function languageName(code, inLanguage) {
+  return phrase(inLanguage, "language." + code);
 }
 
 // Fill in the gaps: "¡Mucho gusto, {name}!" → "¡Mucho gusto, Octavia!"
-function fillIn(text) {
-  const gaps = {
-    name: draft.name,
-    learning: languageName(draft.learning || "es"),
-    learning_en: languageName(draft.learning || "es", "en"),
-    language: askingAbout && languageName(askingAbout),
-    language_en: askingAbout && languageName(askingAbout, "en"),
-  };
+function fillIn(text, inLanguage) {
+  const gaps = { name: draft.name, language: askingAbout && languageName(askingAbout, inLanguage) };
   return text.replace(/\{(\w+)\}/g, (gap, key) => gaps[key] || "");
 }
 
+// One of Profe's lines (written in 4 languages in interview.json) → [main text, hint]
+function profeSays(line) {
+  const { main, hint } = speaking;
+  return [fillIn(pick(line, main), main), hint ? fillIn(pick(line, hint), hint) : ""];
+}
+
 // Add one line to a chat. who = "profe" or "you". where = the interview chat, or the AI chat
-function say(who, es, en, where = chat) {
-  const line = make("p", "message " + who, es, en);
+function say(who, main, hint, where = chat) {
+  const line = make("p", "message " + who, main, hint);
   where.append(line);
   line.scrollIntoView({ block: "end", behavior: "smooth" });
 }
@@ -932,16 +1005,24 @@ function say(who, es, en, where = chat) {
 function optionsFor(step) {
   const all = Object.keys(interview.languages);
   const lang = code => interview.languages[code];
-  const asOption = code => ({ value: code, es: languageName(code), en: languageName(code, "en") });
+  // a language as an answer: its name in each of the app's languages ({ value: "it", es: "italiano", en: "Italian", ... })
+  const asOption = code => {
+    const option = { value: code };
+    for (const language of UI_LANGUAGES) option[language] = languageName(code, language);
+    return option;
+  };
+  if (step.options === "interface") {   // the very first question: each language in its OWN name (Українська, Italiano...)
+    return all.filter(c => lang(c).ui).map(c => ({ value: c, all: lang(c).own }));
+  }
   if (step.options === "languages") {
     return all.filter(c => c !== draft.native).map(asOption);
   }
   if (step.options === "teachable") {   // only the languages Profe can already teach
     return all.filter(c => lang(c).teach && c !== draft.native).map(asOption);
   }
-  if (step.options === "hints") {       // languages you know AND the app has hints for (not the one you're learning)
-    const known = [draft.native, ...(draft.others || [])].filter(c => c !== draft.learning);
-    return [...known.filter(c => lang(c) && lang(c).hints).map(asOption), ...step.extra];
+  if (step.options === "hints") {       // languages you know AND the app can speak (not the one you're learning)
+    const known = [...new Set([draft.ui, draft.native, ...(draft.others || [])])].filter(c => c !== draft.learning);
+    return [...known.filter(c => lang(c) && lang(c).ui).map(asOption), ...step.extra];
   }
   return step.options;
 }
@@ -955,7 +1036,7 @@ function comingSoon(step) {
   }
   if (step.options === "hints") {
     const known = [draft.native, ...(draft.others || [])];
-    return planned.filter(c => known.includes(c) && c !== draft.learning && !interview.languages[c].hints);
+    return planned.filter(c => known.includes(c) && c !== draft.learning && !interview.languages[c].ui);
   }
   return [];
 }
@@ -967,9 +1048,9 @@ function comingSoon(step) {
 const ONLY_LETTERS = /^[\p{L}][\p{L} '’.-]*$/u;   // \p{L} = any letter, in any alphabet (ñ, é, ж, ع...)
 
 function problemWith(step, text) {
-  if (text.length > 40) return { es: "es muy largo", en: "that's too long" };
-  if (step.check && !ONLY_LETTERS.test(text)) return { es: "solo letras, por favor", en: "letters only, please" };
-  return null;   // null = looks fine
+  if (text.length > 40) return "check.long";
+  if (step.check && !ONLY_LETTERS.test(text)) return "check.letters";
+  return null;   // null = looks fine (otherwise: the key of the text that says what's wrong)
 }
 
 function isKnownPlace(step, text) {
@@ -994,7 +1075,7 @@ function waitForAnswer(step) {
   return new Promise(answerWith => {
     // "← atrás" (back): on every question except the first one
     if (answerLog.length > 0) {
-      const back = make("button", "back", "← atrás", "back");
+      const back = make("button", "back", ...tr("interview.back"));
       back.onclick = () => {
         chatCompose.classList.add("hidden");
         chatSend.onclick = chatInput.onkeydown = null;
@@ -1012,14 +1093,15 @@ function waitForAnswer(step) {
       const finish = text => {
         chatCompose.classList.add("hidden");
         chatSend.onclick = chatInput.onkeydown = null;
-        answerWith({ value: text, es: text });
+        answerWith({ value: text, text });
       };
       const send = () => {
         const text = step.check ? capitalize(chatInput.value.trim()) : chatInput.value.trim();
         if (!text) return;   // empty: wait for something
         const problem = problemWith(step, text);
         if (problem) {       // wrong shape: say why, and let them try again
-          setText(warning, "✗ " + problem.es, problem.en);
+          const [main, hint] = tr(problem);
+          setText(warning, "✗ " + main, hint);
           choices.prepend(warning);
           return;
         }
@@ -1032,10 +1114,10 @@ function waitForAnswer(step) {
       chatSend.onclick = send;
       chatInput.onkeydown = event => { if (event.key === "Enter") send(); };
       if (step.optional) {
-        const skip = make("button", "", "saltar", "skip");
+        const skip = make("button", "", ...tr("interview.skip"));
         skip.onclick = () => {
           chatCompose.classList.add("hidden");
-          answerWith({ value: "", es: "—" });
+          answerWith({ value: "", text: "—" });
         };
         choices.append(skip);
       }
@@ -1047,9 +1129,9 @@ function waitForAnswer(step) {
     // 2. Pick ONE answer
     if (step.type === "one" || step.type === "levels" || step.type === "end") {
       for (const option of list) {
-        const button = make("button", "", option.es, option.en);
+        const button = make("button", "", ...both(option));
         if (before && before.value === option.value) button.classList.add("chosen");   // your old choice, in green
-        button.onclick = () => answerWith(option);
+        button.onclick = () => answerWith({ value: option.value, text: pick(option, speaking.main) });
         choices.append(button);
       }
     }
@@ -1058,24 +1140,25 @@ function waitForAnswer(step) {
     if (step.type === "many") {
       const chosen = [];
       for (const option of list) {
-        const button = make("button", "", `[ ] ${option.es}`, option.en);
+        const [name, hint] = both(option);
+        const button = make("button", "", `[ ] ${name}`, hint);
         if (before && before.value.includes(option.value)) {   // back here? your old ticks are still there
           chosen.push(option);
-          setText(button, `[x] ${option.es}`, option.en);
+          setText(button, `[x] ${name}`, hint);
           button.classList.add("chosen");
         }
         button.onclick = () => {
           const i = chosen.indexOf(option);
           if (i === -1) chosen.push(option); else chosen.splice(i, 1);
-          setText(button, `${i === -1 ? "[x]" : "[ ]"} ${option.es}`, option.en);
+          setText(button, `${i === -1 ? "[x]" : "[ ]"} ${name}`, hint);
           button.classList.toggle("chosen", i === -1);
         };
         choices.append(button);
       }
-      const ready = make("button", "ready", "listo →", "done");
+      const ready = make("button", "ready", ...tr("interview.ready"));
       ready.onclick = () => answerWith({
         value: chosen.map(option => option.value),
-        es: chosen.length ? chosen.map(option => option.es).join(", ") : "ninguno",
+        text: chosen.length ? chosen.map(option => pick(option, speaking.main)).join(", ") : t("interview.none"),
       });
       choices.append(ready);
     }
@@ -1083,7 +1166,7 @@ function waitForAnswer(step) {
     // languages that are coming soon: one quiet line, not more buttons
     const soon = comingSoon(step);
     if (soon.length) {
-      choices.append(make("p", "caption soon", "pronto: " + soon.map(c => languageName(c)).join(" · "), "coming soon"));
+      choices.append(make("p", "caption soon", ...tr("interview.soon", language => ({ list: soon.map(c => languageName(c, language)).join(" · ") }))));
     }
     choices.scrollIntoView({ block: "end", behavior: "smooth" });   // keep the answers on screen
   });
@@ -1094,10 +1177,10 @@ function confirmPlace(text, finish) {
   const kept = [...choices.children].filter(el => !el.classList.contains("warning"));   // ← atrás, saltar: keep them for later
   chatCompose.classList.add("hidden");
   choices.innerHTML = "";
-  choices.append(make("p", "caption soon", `no conozco «${text}». ¿es una ciudad o un pueblo?`, `I don't know "${text}". Is it a city or a town?`));
-  const yes = make("button", "", "sí, es mi ciudad", "yes, it's where I live");
+  choices.append(make("p", "caption soon", ...tr("place.unknown", { place: text })));
+  const yes = make("button", "", ...tr("place.yes"));
   yes.onclick = () => finish(text);
-  const fix = make("button", "", "corregir", "fix it");
+  const fix = make("button", "", ...tr("place.fix"));
   fix.onclick = () => {
     choices.replaceChildren(...kept);   // back to the text box, with its buttons
     chatCompose.classList.remove("hidden");
@@ -1110,13 +1193,13 @@ function confirmPlace(text, finish) {
 async function ask(step, messages = step.says) {
   for (const m of messages) {
     if (replay.length === 0) await pause(600);   // no "typing" pause while replaying
-    say("profe", fillIn(m.es), fillIn(m.en));
+    say("profe", ...profeSays(m));
   }
   const reply = await waitForAnswer(step);
   choices.innerHTML = "";
   if (reply.back) throw BACK;   // jump out of the interview... and start it again, one answer shorter
   answerLog.push(reply);
-  say("you", reply.es);
+  say("you", reply.text);
   return reply.value;
 }
 
@@ -1142,6 +1225,7 @@ async function meetProfe(savedAnswers = []) {
 // The whole interview, step by step
 async function runInterview(savedAnswers) {
   draft = { languages: {} };
+  setLanguages(draft);   // before your first answer: the phone's language
   answerLog = [];
   replay = [...savedAnswers];
   chat.innerHTML = "";
@@ -1161,9 +1245,9 @@ async function runInterview(savedAnswers) {
     if (step.type === "end") {
       for (const m of step.says) {
         await pause(600);
-        say("profe", fillIn(m.es), fillIn(m.en));
+        say("profe", ...profeSays(m));
       }
-      for (const [es, en] of profileLines(draft)) say("profile-line", es, en);
+      for (const [main, hint] of profileLines(draft)) say("profile-line", main, hint);
       if (await ask(step, step.after) === "again") return runInterview([]);   // start again, from zero
       continue;
     }
@@ -1171,6 +1255,7 @@ async function runInterview(savedAnswers) {
     const value = await ask(step);
     draft[step.saveAs] = value;
     if (step.id === "native") draft.languages[value] = "native";
+    setLanguages(draft);   // Profe switches language as soon as you choose (your language, then the one you learn)
   }
 
   // Done: save the profile on this device and open the app
@@ -1181,7 +1266,7 @@ async function runInterview(savedAnswers) {
     profile.level = before.placement.level;
   }
   save("profile", profile);
-  applyHints();
+  setLanguages(profile);
   showName();
   if (plan && plan.basic) plan = null;   // the simple plan will be made again, with your new name
   buildQueue();
@@ -1191,46 +1276,47 @@ async function runInterview(savedAnswers) {
   else show("today");
 }
 
-// The profile as short lines (Spanish + English hint): at the end of the interview and in [ progreso ]
-function optionLabel(stepId, value) {
-  if (value === "native") return "nativo";
+// The profile as short lines [main, hint]: at the end of the interview and in ⚙ "tu ficha"
+function optionLabel(stepId, value, language) {
+  if (value === "native") return phrase(language, "profile.native");
   const step = interview.steps.find(s => s.id === stepId);
   const option = Array.isArray(step.options) && step.options.find(o => o.value === value);
-  return option ? option.es : String(value);
+  return option ? pick(option, language) : String(value);
 }
 
 function profileLines(p) {
-  const spoken = Object.entries(p.languages || {}).map(([code, level]) => `${languageName(code)} (${optionLabel("levels", level)})`);
-  const list = (stepId, values) => (values || []).map(v => optionLabel(stepId, v)).join(" · ") || "—";
+  const list = (stepId, values, language) => (values || []).map(v => optionLabel(stepId, v, language)).join(" · ") || "—";
+  const spoken = language => Object.entries(p.languages || {})
+    .map(([code, level]) => `${languageName(code, language)} (${optionLabel("levels", level, language)})`).join(" · ") || "—";
   return [
-    [`nombre: ${p.name}`, "name"],
-    [`hablas: ${spoken.join(" · ") || "—"}`, "languages you speak"],
-    [`aprendes: ${languageName(p.learning)} · nivel ${p.level}`, "you're learning · level"],
-    [`pistas: ${p.hints === "none" ? "sin pistas" : languageName(p.hints)}`, "hints"],
-    [`para: ${list("reasons", p.reasons)}`, "why"],
-    [`vives en: ${p.city || "—"} · ${p.school ? "con escuela" : "sin escuela"}`, "you live in · with / without a school"],
-    [`te gusta: ${list("interests", p.interests)}`, "you like"],
-    [`tiempo: ${optionLabel("minutes", p.minutes)} al día · ${NEW_PER_MINUTES[p.minutes]} palabras nuevas`, "time per day · new words"],
-    ...(p.placement ? [[`prueba de nivel (${p.placement.date}): ${p.placement.passed ? "superado " + p.placement.passed + " · " : ""}estudias ${p.placement.start}`, "placement test: passed · now studying"]] : []),
-    ...(p.notes || []).map(note => [`✎ ${note}`, "Profe remembers"]),
+    tr("profile.name", { name: p.name }),
+    tr("profile.speaks", language => ({ list: spoken(language) })),
+    tr("profile.learning", language => ({ language: languageName(p.learning, language), level: p.level })),
+    tr("profile.hints", language => ({ language: p.hints === "none" ? phrase(language, "profile.nohints") : languageName(p.hints, language) })),
+    tr("profile.reasons", language => ({ list: list("reasons", p.reasons, language) })),
+    tr("profile.lives", language => ({ city: p.city || "—", school: phrase(language, p.school ? "school.yes" : "school.no") })),
+    tr("profile.likes", language => ({ list: list("interests", p.interests, language) })),
+    tr("profile.time", language => ({ minutes: optionLabel("minutes", p.minutes, language) })),
+    ...(p.placement ? [tr(p.placement.passed ? "profile.testPassed" : "profile.test", p.placement)] : []),
+    ...(p.notes || []).map(note => [`✎ ${note}`, ""]),   // Profe's notes about you (Profe writes them in English)
   ];
 }
 
-// [ progreso ] → "tu ficha": what Profe knows about you, + meet Profe again
+// ⚙ → "tu ficha": what Profe knows about you, + meet Profe again
 function drawProfile() {
   const box = $("#profile");
   box.innerHTML = "";
   if (!interview) return;   // offline and the questions never loaded: nothing to show
   if (profile) {
-    for (const [es, en] of profileLines(profile)) box.append(make("p", "message profile-line", es, en));
+    for (const [main, hint] of profileLines(profile)) box.append(make("p", "message profile-line", main, hint));
   } else {
-    box.append(make("p", "empty", "todavía no conoces a Profe", "you haven't met Profe yet"));
+    box.append(make("p", "empty", ...tr("profile.empty")));
   }
-  const again = make("button", "link", profile ? "↺ repetir la entrevista" : "→ conocer a Profe", profile ? "redo the interview" : "meet Profe");
+  const again = make("button", "link", ...tr(profile ? "profile.again" : "profile.meet"));
   again.onclick = () => meetProfe();
   box.append(again);
   if (profile && placementTest) {
-    const test = make("button", "link", profile.placement ? "↺ repetir la prueba de nivel" : "→ hacer la prueba de nivel", profile.placement ? "retake the placement test" : "take the placement test");
+    const test = make("button", "link", ...tr(profile.placement ? "test.again" : "test.take"));
     test.onclick = startPlacement;
     box.append(test);
   }
@@ -1285,6 +1371,11 @@ function fillCity(text) {
   return (text || "").replace(/\{city\}/g, (profile && profile.city) || "your city");
 }
 
+// A step's name for [main, hint]: its title in the language you learn, and what you'll be able to do as the hint
+function stepTitle(step) {
+  return language => ({ title: language === speaking.main ? step.title : step.review ? phrase(language, "map.review") : step.cando });
+}
+
 // For Profe (the AI): where you are on the map, and what comes next
 function mapContext() {
   if (!curriculum) return "";
@@ -1330,9 +1421,9 @@ function drawMap() {
   box.append(levels);
 
   const level = curriculum.levels.find(l => l.id === levelId);
-  box.append(make("p", "caption", `${level.id} · ${level.name}`, `${level.en}: ${level.summary}`));
+  box.append(make("p", "caption", `${level.id} · ${level.name}`, contentHint(`${level.en}: ${level.summary}`)));
   if (step) {   // your current step, right under the level
-    box.append(make("p", "now", `ahora: ${step.title}`, step.review ? "now: review + mini-test" : `now: ${step.cando}`));
+    box.append(make("p", "now", ...tr("map.now", stepTitle(step))));
   }
 
   for (const module of level.modules) {
@@ -1343,7 +1434,7 @@ function drawMap() {
     const bar = make("span", "bar");
     bar.append(make("span", "bar-learned", "█".repeat(full)), make("span", "bar-new", "░".repeat(width - full)));
     const row = make("div", "row");
-    row.append(make("span", "topic", module.title, module.en), bar, make("span", "count", `${doneHere}/${moduleSteps.length}`));
+    row.append(make("span", "topic", module.title, contentHint(module.en)), bar, make("span", "count", `${doneHere}/${moduleSteps.length}`));
     box.append(row);
   }
 
@@ -1363,7 +1454,7 @@ const ptCompose = $("#pt-compose");
 const ptInput = $("#pt-input");
 const ptSend = $("#pt-send");
 const ptOptions = $("#pt-options");
-const SKILLS = { grammar: ["gramática", "grammar"], vocabulary: ["vocabulario", "vocabulary"], reading: ["lectura", "reading"], writing: ["escritura", "writing"] };
+const SKILLS = ["grammar", "vocabulary", "reading", "writing"];   // their names: lang/*.json → "skill.grammar"...
 
 // A new order every time: [a, b, c] → [c, a, b]
 function shuffle(list) {
@@ -1386,7 +1477,8 @@ function askItem(item) {
 
   return new Promise(answerWith => {
     if (item.type === "write") {
-      setText(ptQuestion, item.en, "write this in Spanish");
+      // the sentence to translate, in your language · under it: "write it in Spanish", also in your language
+      setText(ptQuestion, pick(item, speaking.hint || "en"), own("writing.label", language => ({ in: phrase(language, "in." + learning()) })));
       ptCompose.classList.remove("hidden");
       ptInput.value = "";
       ptInput.focus();
@@ -1406,7 +1498,7 @@ function askItem(item) {
       }
     }
     // an honest "I don't know" is better than a lucky guess: it makes your level more accurate
-    const skip = make("button", "back", "no lo sé", "I don't know (better than guessing!)");
+    const skip = make("button", "back", ...tr("pt.idk"));
     skip.onclick = () => {
       ptSend.onclick = ptInput.onkeydown = null;
       answerWith(false);
@@ -1421,7 +1513,7 @@ async function testLevel(level, skills) {
   let right = 0;
   let wrong = 0;
   for (const [i, item] of level.items.entries()) {
-    setText(ptProgress, `prueba de nivel · ${level.id} · pregunta ${i + 1} de ${level.items.length}`, "placement test · level · question");
+    setText(ptProgress, ...tr("pt.progress", { level: level.id, n: i + 1, total: level.items.length }));
     const ok = await askItem(item);
     if (ok) right++; else wrong++;
     const s = skills[item.skill] = skills[item.skill] || {};
@@ -1459,7 +1551,7 @@ async function runPlacement() {
   // per skill: the highest level where you got at least half right
   const order = levels.map(l => l.id);
   const skillLevels = {};
-  for (const skill in SKILLS) {
+  for (const skill of SKILLS) {
     const passed = order.filter(id => skills[skill] && skills[skill][id] && skills[skill][id].right * 2 >= skills[skill][id].total);
     skillLevels[skill] = passed.length ? passed[passed.length - 1] : null;
   }
@@ -1475,13 +1567,12 @@ async function startPlacement() {
   show("placement");
   ptText.classList.add("hidden");
   ptCompose.classList.add("hidden");
-  setText(ptProgress, "prueba de nivel", "placement test");
-  setText(ptQuestion, "¿Cuál es tu nivel de verdad?", "What's your real level?");
+  setText(ptProgress, ...tr("pt.title"));
+  setText(ptQuestion, ...tr("pt.intro"));
   ptOptions.innerHTML = "";
-  ptOptions.append(make("p", "caption soon", "unos 5 minutos · sin diccionario · si no lo sabes, pulsa «no lo sé»",
-    "about 5 minutes · no dictionary · if you don't know, tap \"no lo sé\""));
-  const go = make("button", "", "empezar →", "start");
-  const later = make("button", "", "ahora no", "not now");
+  ptOptions.append(make("p", "caption soon", ...tr("pt.rules", { idk: t("pt.idk") })));
+  const go = make("button", "", ...tr("pt.start"));
+  const later = make("button", "", ...tr("pt.later"));
   ptOptions.append(go, later);
   const answer = await new Promise(choose => {
     go.onclick = () => choose(true);
@@ -1506,18 +1597,16 @@ function showPlacementResult(result) {
   ptText.classList.add("hidden");
   ptCompose.classList.add("hidden");
   ptOptions.innerHTML = "";
-  setText(ptProgress, "prueba de nivel · resultado", "placement test · result");
+  setText(ptProgress, ...tr("pt.result"));
   const level = curriculum && curriculum.levels.find(l => l.id === result.start);
   // "superado" = the level you passed · "ahora estudias" = the level you work on next
-  setText(ptQuestion, `ahora estudias: ${result.start}${level ? " · " + level.name : ""}`, level ? `you now study: ${level.en}` : "you now study");
-  ptOptions.append(make("p", "now", result.passed ? `✓ has superado: ${result.passed}` : "empiezas desde el principio",
-    result.passed ? `you've passed ${result.passed}` : "you start from the beginning"));
-  for (const [es, en] of placementLines(result)) ptOptions.append(make("p", "message profile-line", es, en));
+  setText(ptQuestion, ...tr("pt.study", language => ({ level: result.start + (level ? " · " + (language === speaking.main ? level.name : level.en) : "") })));
+  ptOptions.append(make("p", "now", ...tr(result.passed ? "pt.passed" : "pt.zero", { level: result.passed })));
+  for (const [main, hint] of placementLines(result)) ptOptions.append(make("p", "message profile-line", main, hint));
   const step = curriculum && currentStep();
-  if (step) ptOptions.append(make("p", "now", `empiezas en: ${step.title}`, `you start at: ${step.review ? "review" : step.cando}`));
-  ptOptions.append(make("p", "caption soon", "es una estimación: no mide hablar ni escuchar. Profe lo ajusta contigo.",
-    "it's an estimate: it can't measure speaking or listening. Profe adjusts it with you."));
-  const go = make("button", "ready", "¡empezamos! →", "let's start!");
+  if (step) ptOptions.append(make("p", "now", ...tr("pt.startAt", stepTitle(step))));
+  ptOptions.append(make("p", "caption soon", ...tr("pt.estimate")));
+  const go = make("button", "ready", ...tr("go"));
   go.onclick = () => {
     buildQueue();
     nextCard();
@@ -1526,11 +1615,11 @@ function showPlacementResult(result) {
   ptOptions.append(go);
 }
 
-// "gramática: A2" … (used on the result screen and in "tu ficha")
+// "gramática: A2" … as [main, hint] lines, for the result screen
 function placementLines(result) {
-  return Object.keys(SKILLS).map(skill => {
-    const got = result.skills[skill];
-    return [`${SKILLS[skill][0]}: ${got || "por debajo de A1"}`, `${SKILLS[skill][1]}${got ? "" : ": below A1"}`];
+  return SKILLS.map(skill => {
+    const line = language => `${phrase(language, "skill." + skill)}: ${result.skills[skill] || phrase(language, "pt.below")}`;
+    return [line(speaking.main), speaking.hint ? line(speaking.hint) : ""];
   });
 }
 
@@ -1538,7 +1627,7 @@ function placementLines(result) {
 function placementContext() {
   const p = profile && profile.placement;
   if (!p) return "\nPlacement test: not taken yet (the level above is the learner's own guess).";
-  const skills = Object.keys(SKILLS).map(s => `${s} ${p.skills[s] || "below A1"}`).join(", ");
+  const skills = SKILLS.map(s => `${s} ${p.skills[s] || "below A1"}`).join(", ");
   return `\nPlacement test (${p.date}): passed ${p.passed || "nothing yet"}, so the level to study is ${p.start}; highest level passed per skill: ${skills}. Listening and speaking were not measured: assess them in conversation.`;
 }
 
@@ -1558,9 +1647,22 @@ const AI_PROVIDERS = {
   anthropic: { name: "Anthropic (Claude)", model: "claude-opus-5-5", keys: "console.anthropic.com" },
   openai: { name: "OpenAI", url: "https://api.openai.com/v1", model: "", keys: "platform.openai.com" },
   gemini: { name: "Google Gemini", model: "", keys: "aistudio.google.com" },
-  openrouter: { name: "OpenRouter (muchos modelos)", url: "https://openrouter.ai/api/v1", model: "", keys: "openrouter.ai" },
-  custom: { name: "Otro (compatible con OpenAI)", url: "", model: "", keys: "" },
+  openrouter: { name: "OpenRouter", nameKey: "ai.openrouter", url: "https://openrouter.ai/api/v1", model: "", keys: "openrouter.ai" },
+  custom: { name: "Other", nameKey: "ai.custom", url: "", model: "", keys: "" },
 };
+// A provider's name on the screen (two of them have a few words to translate)
+function providerName(id) {
+  const provider = AI_PROVIDERS[id];
+  return provider.nameKey ? own(provider.nameKey) : provider.name;
+}
+
+// An error the learner can read: .message in the main language, .hint in their own
+function readableError(key, values) {
+  const error = new Error(t(key, values));
+  error.hint = tr(key, values)[1];
+  return error;
+}
+
 const TALK_MEMORY = 20;   // how many recent messages the AI sees (more = better memory, more cost)
 
 let ai = loadSaved("ai");            // { provider, key, model, url }
@@ -1601,7 +1703,7 @@ async function askAI(system, messages) {
     body = { model, max_tokens: 16000, system, messages };
     claudeOptions(model, body, headers);
     read = data => {
-      if (data.stop_reason === "refusal") throw new Error("Profe no puede responder a eso");
+      if (data.stop_reason === "refusal") throw readableError("ai.refusal");
       return data.content.filter(block => block.type === "text").map(block => block.text).join("");
     };
   } else if (provider === "gemini") {
@@ -1623,14 +1725,14 @@ async function askAI(system, messages) {
   try {
     response = await fetch(url, { method: "POST", headers, body: JSON.stringify(body) });
   } catch (error) {
-    throw new Error("sin conexión con la IA (¿internet?)");
+    throw readableError("ai.offline");
   }
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
     const detail = (data.error && (data.error.message || data.error)) || response.statusText;
-    if (response.status === 401 || response.status === 403) throw new Error(`la clave no funciona (${detail})`);
-    if (response.status === 429) throw new Error(`demasiados mensajes o sin saldo (${detail})`);
-    throw new Error(`error ${response.status}: ${detail}`);
+    if (response.status === 401 || response.status === 403) throw readableError("ai.badKey", { detail });
+    if (response.status === 429) throw readableError("ai.limit", { detail });
+    throw readableError("ai.error", { status: response.status, detail });
   }
   return read(data);
 }
@@ -1642,7 +1744,7 @@ function aiReady() {
 // ---- What Profe knows about you (sent with every message) ----
 function learnerContext() {
   const lines = [];
-  const lang = code => (interview && interview.languages[code] ? interview.languages[code].en : code);
+  const lang = code => phrase("en", "language." + code);   // Profe's instructions are in English
   if (profile) {
     const spoken = Object.entries(profile.languages || {}).map(([c, level]) => `${lang(c)} (${level})`).join(", ");
     lines.push("# The learner (profile)",
@@ -1675,13 +1777,14 @@ function learnerContext() {
 
 // ---- The chat screen ----
 const ACTION = /^\s*\[\[\s*(card|go|note|done)\s*\|(.*)\]\]\s*$/i;
-const GO_TO = { review: ["→ repasar", "go to review"], progress: ["→ progreso", "go to progress"], today: ["→ hoy", "go to today"] };
+const GO_TO = { review: "nav.review", progress: "nav.progress", today: "nav.today" };   // "→ repasar"...
 
 // Profe's words, with the translations tucked away.
 // Profe writes each translation on its own line, starting with ">":
 //   ¿Qué tal tu día?
 //   > How was your day?
 // The app hides those lines until you tap [traducción]: you try to understand first.
+// (That button is written in YOUR language: it's the one thing you must always understand.)
 function profeMessage(words) {
   const message = make("div", "message profe");
   let translations = 0;
@@ -1697,10 +1800,10 @@ function profeMessage(words) {
     }
   }
   if (translations) {
-    const toggle = make("button", "eye", "[traducción]");
+    const toggle = make("button", "eye", own("talk.translation"));
     toggle.onclick = () => {
       const open = message.classList.toggle("open");
-      toggle.textContent = open ? "[ocultar]" : "[traducción]";
+      toggle.textContent = own(open ? "talk.hide" : "talk.translation");
     };
     message.append(toggle);
   }
@@ -1738,16 +1841,16 @@ function showMessage(message) {
     }
     if (type === "go" && GO_TO[parts[0]]) {
       const target = parts[0];
-      const button = make("button", "offer", ...GO_TO[target]);
+      const button = make("button", "offer", ...tr(GO_TO[target]).map(text => text && "→ " + text));
       button.onclick = () => show(target);
       talkLog.append(button);
     }
     if (type === "note" && parts[0]) {
-      talkLog.append(make("p", "caption", `✎ Profe recordará: ${parts.join(" | ")}`, "Profe will remember this"));
+      talkLog.append(make("p", "caption", ...tr("talk.note", { note: parts.join(" | ") })));
     }
     if (type === "done" && curriculum) {
       const step = mapSteps().find(s => s.id === parts[0]);
-      if (step) talkLog.append(make("p", "caption done-step", `✓ completado: ${step.title}`, "a step on your map is done!"));
+      if (step) talkLog.append(make("p", "caption done-step", ...tr("talk.done", { title: step.title })));
     }
   }
 }
@@ -1781,13 +1884,11 @@ function applyActions(content) {
 
 function drawTalk() {
   talkLog.innerHTML = "";
-  const name = profile ? profile.name : "";
-  say("profe", `¡Hola${name ? ", " + name : ""}! Escríbeme una frase que has oído hoy, o pregúntame lo que quieras.`,
-    "Hi! Send me a sentence you heard today, or ask me anything.", talkLog);
+  const name = profile && profile.name ? ", " + profile.name : "";
+  say("profe", ...tr("talk.hello", { name }), talkLog);
   if (!aiReady()) {
-    say("profe", "Para hablar contigo necesito una IA. Conecta tu cuenta y vuelve.",
-      "To talk with you I need an AI. Connect your account and come back.", talkLog);
-    const connect = make("button", "offer", "→ conectar mi IA", "connect my AI");
+    say("profe", ...tr("talk.needAi"), talkLog);
+    const connect = make("button", "offer", ...tr("talk.connect"));
     connect.onclick = () => {
       show("settings");
       $("#ai-settings").scrollIntoView({ behavior: "smooth" });
@@ -1832,7 +1933,7 @@ async function sendToProfe() {
     talkInput.value = text;
     typing.remove();
     talkLog.lastElementChild.remove();
-    talkLog.append(make("p", "caption warning", `✗ ${error.message}`, "Profe couldn't answer"));
+    talkLog.append(make("p", "caption warning", `✗ ${error.message}`, error.hint));
   }
   waiting = false;
 }
@@ -1876,16 +1977,13 @@ function checkKey() {
     return;
   }
   const starts = KEY_STARTS[aiProvider.value];
-  const looks = `${key.length} caracteres · ${key.slice(0, 7)}…${key.slice(-4)}`;
-  if (starts && !starts.some(start => key.startsWith(start))) {
-    setText(box, `⚠ ${looks}: una clave de ${AI_PROVIDERS[aiProvider.value].name} empieza por «${starts.join("» o «")}»`,
-      "this doesn't look like a key from this provider: did the phone fill in something else? tap [ver] to check");
+  const looks = { n: key.length, start: key.slice(0, 7), end: key.slice(-4) };
+  if (starts && !starts.some(start => key.startsWith(start))) {   // did the phone fill in something else?
+    setText(box, ...tr("key.wrong", language => ({ looks: phrase(language, "key.looks", looks), provider: providerName(aiProvider.value), starts: starts.join(" / ") })));
   } else {
-    setText(box, looks, "length · start…end of your key: compare with the one you copied");
+    setText(box, ...tr("key.looks", looks));
   }
 }
-
-for (const id in AI_PROVIDERS) aiProvider.append(new Option(AI_PROVIDERS[id].name, id));
 
 // "gemini-3.8-flash" → 3.8 (to put the newest models first)
 function version(id) {
@@ -1900,13 +1998,13 @@ async function listModels(provider, key, url) {
     try {
       response = await fetch(address, { headers });
     } catch (error) {
-      throw new Error("sin conexión (¿internet?)");
+      throw readableError("ai.offline");
     }
     const data = await response.json().catch(() => ({}));
     if (!response.ok) {
       const detail = (data.error && (data.error.message || data.error)) || response.statusText;
-      if (response.status === 400 || response.status === 401 || response.status === 403) throw new Error(`la clave no funciona (${detail})`);
-      throw new Error(`error ${response.status}: ${detail}`);
+      if (response.status === 400 || response.status === 401 || response.status === 403) throw readableError("ai.badKey", { detail });
+      throw readableError("ai.error", { status: response.status, detail });
     }
     return data;
   };
@@ -1946,13 +2044,13 @@ async function listModels(provider, key, url) {
 function fillModels(models, wanted) {
   aiModel.innerHTML = "";
   const free = models.filter(m => m.free);
-  const groups = free.length ? [["gratis", free], ["de pago", models.filter(m => !m.free)]] : [["", models]];
+  const groups = free.length ? [[own("models.free"), free], [own("models.paid"), models.filter(m => !m.free)]] : [["", models]];
   for (const [label, list] of groups) {
     const parent = label ? aiModel.appendChild(Object.assign(document.createElement("optgroup"), { label })) : aiModel;
     for (const m of list) parent.append(new Option(m.name === m.id ? m.id : `${m.name} · ${m.id}`, m.id));
   }
-  if (models.length === 0) aiModel.append(new Option("pega tu clave para ver tus modelos", ""));   // nothing to choose yet
-  aiModel.append(new Option("✎ otro (escribir el nombre)", OTHER_MODEL));
+  if (models.length === 0) aiModel.append(new Option(own("models.none"), ""));   // nothing to choose yet
+  aiModel.append(new Option(own("models.other"), OTHER_MODEL));
   const ids = models.map(m => m.id);
   // Gemini: the newest stable Flash model (fast, and usually in the free tier)
   const flash = aiProvider.value === "gemini" && ids.find(id => /flash/.test(id) && !/preview|exp|lite|thinking/.test(id));
@@ -1972,42 +2070,43 @@ async function findModels() {
   const key = cleanKey(aiKey.value);
   if (!key) return;
   if (aiProvider.value === "custom" && !aiUrl.value.trim()) {
-    setText(aiStatus, "escribe primero la dirección (URL)", "type the address first");
+    setText(aiStatus, ...tr("ai.urlFirst"));
     return;
   }
   const mine = ++lookup;
-  setText(aiStatus, "buscando tus modelos…", "looking up the models your key can use");
+  setText(aiStatus, ...tr("ai.looking"));
   try {
     const models = await listModels(aiProvider.value, key, aiUrl.value.trim());
     if (mine !== lookup) return;
     fillModels(models, ai && ai.provider === aiProvider.value ? ai.model : "");
-    setText(aiStatus, models.length ? `✓ ${models.length} modelos: elige uno` : "no encontré modelos: escribe el nombre",
-      models.length ? "pick a model, then save and test" : "no models found: type the name");
+    setText(aiStatus, ...tr(models.length ? "ai.found" : "ai.notFound", { n: models.length }));
   } catch (error) {
     if (mine !== lookup) return;
-    setText(aiStatus, `✗ ${error.message}`, "check the key and the provider");
+    setText(aiStatus, `✗ ${error.message}`, error.hint);
   }
 }
 
 function drawAiSettings() {
   const current = ai || { provider: "anthropic", key: "", model: "", url: "" };
+  aiProvider.innerHTML = "";   // the list of providers, in your language
+  for (const id in AI_PROVIDERS) aiProvider.append(new Option(providerName(id), id));
   aiProvider.value = current.provider;
   aiKey.value = current.key;
   aiKey.classList.add("masked");
-  $("#ai-key-show").textContent = "[ver]";
+  $("#ai-key-show").textContent = t("ai.show");
   aiUrl.value = current.url || "";
   // until you look up the list again, it shows just the model you chose
   fillModels(current.model ? [{ id: current.model, name: current.model }] : [], current.model);
   updateAiForm();
   checkKey();
-  if (aiReady()) setText(aiStatus, `✓ Profe usa ${AI_PROVIDERS[ai.provider].name} · ${ai.model}`, "Profe's AI is connected");
+  if (aiReady()) setText(aiStatus, ...tr("ai.uses", { provider: providerName(ai.provider), model: ai.model }));
 }
 
 // Changing provider: where to get a key, and the URL box only for "otro"
 function updateAiForm() {
   const p = AI_PROVIDERS[aiProvider.value];
   $("#ai-url-row").classList.toggle("hidden", aiProvider.value !== "custom");
-  setText(aiStatus, p.keys ? `consigue tu clave en ${p.keys}` : "", p.keys ? "where to get your key" : "");
+  setText(aiStatus, ...(p.keys ? tr("ai.getKey", { site: p.keys }) : [""]));
 }
 
 aiProvider.addEventListener("change", () => {
@@ -2025,7 +2124,7 @@ aiKey.addEventListener("input", () => {
 // [ver] (show) / [ocultar] (hide) the key
 $("#ai-key-show").addEventListener("click", () => {
   const hidden = aiKey.classList.toggle("masked");
-  $("#ai-key-show").textContent = hidden ? "[ver]" : "[ocultar]";
+  $("#ai-key-show").textContent = t(hidden ? "ai.show" : "ai.hide");
 });
 aiModel.addEventListener("change", showOtherBox);
 $("#ai-find-models").addEventListener("click", findModels);
@@ -2035,17 +2134,15 @@ $("#ai-save").addEventListener("click", async () => {
   ai = { provider: aiProvider.value, key: cleanKey(aiKey.value), model, url: aiUrl.value.trim() };
   save("ai", ai);
   if (!aiReady()) {
-    if (!ai.key) setText(aiStatus, "✗ pega tu clave", "paste your key");
-    else if (!ai.model) setText(aiStatus, "✗ elige un modelo (↻ ver mis modelos)", "pick a model: tap ↻ to see your models");
-    else setText(aiStatus, "✗ falta la dirección (URL)", "the address (URL) is missing");
+    setText(aiStatus, ...tr(!ai.key ? "ai.needKey" : !ai.model ? "ai.needModel" : "ai.needUrl"));
     return;
   }
-  setText(aiStatus, "probando…", "testing");
+  setText(aiStatus, ...tr("ai.testing"));
   try {
-    await askAI("Reply with one short friendly word in Spanish.", [{ role: "user", content: "hola" }]);
-    setText(aiStatus, `✓ conectado: ${AI_PROVIDERS[ai.provider].name} · ${ai.model}`, "connected! Profe can talk now");
+    await askAI("Reply with one short friendly word.", [{ role: "user", content: t("hello") }]);
+    setText(aiStatus, ...tr("ai.connected", { provider: providerName(ai.provider), model: ai.model }));
   } catch (error) {
-    setText(aiStatus, `✗ ${error.message}`, "it didn't work: try another model, or check the key");
+    setText(aiStatus, `✗ ${error.message}`, error.hint);
   }
 });
 
@@ -2053,7 +2150,7 @@ $("#ai-forget").addEventListener("click", () => {
   ai = null;
   localStorage.removeItem("ai");
   drawAiSettings();
-  setText(aiStatus, "clave borrada de este teléfono", "key deleted from this phone");
+  setText(aiStatus, ...tr("ai.deleted"));
 });
 
 // ---------- 18. Offline + updates ----------
@@ -2067,7 +2164,7 @@ $("#version").textContent = `mi-app v${VERSION}`;
 
 // [ ↻ actualizar ]: get the newest files and restart the app
 async function update() {
-  setText(statusLine, "actualizando...", "updating...");
+  setText(statusLine, ...tr("update.running"));
   if ("serviceWorker" in navigator) {
     const registration = await navigator.serviceWorker.getRegistration();
     if (registration) await registration.update().catch(() => {});   // is there a new sw.js?

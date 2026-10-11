@@ -11,7 +11,7 @@
         { "id": "A1-v1", "skill": "vocabulary", "type": "choice", "q": "Por la mañana bebo ___.", "answer": "un café", "wrong": ["una silla", "una camisa"] },
         { "id": "A1-v2", "skill": "vocabulary", "type": "choice", "q": "Lunes, martes, ___, jueves.", "answer": "miércoles", "wrong": ["sábado", "enero"] },
         { "id": "A1-r1", "skill": "reading", "type": "choice", "q": "¿Dónde trabaja Ana?", "answer": "en un hospital", "wrong": ["en una escuela", "en un restaurante"], "text": "Hola, me llamo Ana. Vivo en Madrid y trabajo en un hospital." },
-        { "id": "A1-w1", "skill": "writing", "type": "write", "en": "I have two brothers.", "answers": ["tengo dos hermanos", "yo tengo dos hermanos"] }
+        { "id": "A1-w1", "skill": "writing", "type": "write", "en": "I have two brothers.", "uk": "У мене два брати.", "it": "Ho due fratelli.", "answers": ["tengo dos hermanos", "yo tengo dos hermanos"] }
       ]
     },
     {
@@ -22,7 +22,7 @@
         { "id": "A2-v1", "skill": "vocabulary", "type": "choice", "q": "Para alquilar un piso, tienes que firmar un ___.", "answer": "contrato", "wrong": ["billete", "menú"] },
         { "id": "A2-v2", "skill": "vocabulary", "type": "choice", "q": "Me duele la cabeza: voy a la ___ a comprar algo.", "answer": "farmacia", "wrong": ["librería", "panadería"] },
         { "id": "A2-r1", "skill": "reading", "type": "choice", "q": "¿Cuándo no puedes comprar en la tienda?", "answer": "el domingo", "wrong": ["el sábado por la mañana", "el martes a las 10:00"], "text": "La tienda abre de lunes a viernes de 9:00 a 14:00. Los sábados abre solo por la mañana y los domingos está cerrada." },
-        { "id": "A2-w1", "skill": "writing", "type": "write", "en": "Yesterday I ate paella.", "answers": ["ayer comí paella", "ayer comí una paella", "comí paella ayer", "ayer yo comí paella"] }
+        { "id": "A2-w1", "skill": "writing", "type": "write", "en": "Yesterday I ate paella.", "uk": "Учора я їв / їла паелью.", "it": "Ieri ho mangiato la paella.", "answers": ["ayer comí paella", "ayer comí una paella", "comí paella ayer", "ayer yo comí paella"] }
       ]
     },
     {
@@ -33,7 +33,7 @@
         { "id": "B1-v1", "skill": "vocabulary", "type": "choice", "q": "No estoy de acuerdo contigo; ___, respeto tu opinión.", "answer": "sin embargo", "wrong": ["por eso", "además"] },
         { "id": "B1-v2", "skill": "vocabulary", "type": "choice", "q": "Mañana tengo una ___ de trabajo: quiero ese puesto.", "answer": "entrevista", "wrong": ["receta", "factura"] },
         { "id": "B1-r1", "skill": "reading", "type": "choice", "q": "¿Qué opina la persona del hotel?", "answer": "Le gustó, pero el desayuno era caro", "wrong": ["Fue una mala experiencia", "Estaba muy bien situado"], "text": "Aunque el hotel estaba lejos del centro, nos gustó mucho: las habitaciones eran tranquilas y el personal nos ayudó con todo. Lo único malo fue el desayuno, que era bastante caro." },
-        { "id": "B1-w1", "skill": "writing", "type": "write", "en": "I think it's a good idea.", "answers": ["creo que es una buena idea", "yo creo que es una buena idea", "pienso que es una buena idea", "me parece una buena idea", "me parece que es una buena idea"] }
+        { "id": "B1-w1", "skill": "writing", "type": "write", "en": "I think it's a good idea.", "uk": "Я думаю, що це гарна ідея.", "it": "Penso che sia una buona idea.", "answers": ["creo que es una buena idea", "yo creo que es una buena idea", "pienso que es una buena idea", "me parece una buena idea", "me parece que es una buena idea"] }
       ]
     },
     {
@@ -44,7 +44,7 @@
         { "id": "B2-v1", "skill": "vocabulary", "type": "choice", "q": "Tras meses de negociación, las dos empresas llegaron a un ___.", "answer": "acuerdo", "wrong": ["recuerdo", "retraso"] },
         { "id": "B2-v2", "skill": "vocabulary", "type": "choice", "q": "«No dar pie con bola» significa…", "answer": "hacerlo todo mal", "wrong": ["jugar muy bien al fútbol", "estar muy cansado"] },
         { "id": "B2-r1", "skill": "reading", "type": "choice", "q": "Según el texto, ¿qué riesgo tiene el teletrabajo?", "answer": "trabajar más horas de las debidas", "wrong": ["ganar menos dinero", "perder el empleo"], "text": "El teletrabajo ha dejado de ser una medida excepcional para convertirse en una opción estable. Sin embargo, varios estudios advierten de que, sin límites claros, la jornada tiende a alargarse y la frontera entre vida personal y laboral se difumina." },
-        { "id": "B2-w1", "skill": "writing", "type": "write", "en": "He told me that he would come.", "answers": ["me dijo que vendría", "él me dijo que vendría", "me dijo que iba a venir", "él me dijo que iba a venir"] }
+        { "id": "B2-w1", "skill": "writing", "type": "write", "en": "He told me that he would come.", "uk": "Він сказав мені, що прийде.", "it": "Mi ha detto che sarebbe venuto.", "answers": ["me dijo que vendría", "él me dijo que vendría", "me dijo que iba a venir", "él me dijo que iba a venir"] }
       ]
     },
     {
@@ -55,7 +55,7 @@
         { "id": "C1-v1", "skill": "vocabulary", "type": "choice", "q": "Su discurso fue tan ___ que nadie entendió qué proponía.", "answer": "ambiguo", "wrong": ["conciso", "tajante"] },
         { "id": "C1-v2", "skill": "vocabulary", "type": "choice", "q": "«A buenas horas, mangas verdes» se dice cuando algo…", "answer": "llega demasiado tarde", "wrong": ["sale muy barato", "se hace con prisa"] },
         { "id": "C1-r1", "skill": "reading", "type": "choice", "q": "¿Qué piensa quien escribe sobre el autor?", "answer": "que su prudencia es coherente con su enfoque", "wrong": ["que le falta rigor", "que sus conclusiones son demasiado tajantes"], "text": "Que el autor rehúya cualquier conclusión tajante no debe interpretarse como falta de rigor; antes bien, es la consecuencia lógica de un planteamiento que desconfía de las respuestas simples." },
-        { "id": "C1-w1", "skill": "writing", "type": "write", "en": "If I had known, I wouldn't have come.", "answers": ["si lo hubiera sabido no habría venido", "si lo hubiese sabido no habría venido", "de haberlo sabido no habría venido", "si lo hubiera sabido no hubiera venido"] }
+        { "id": "C1-w1", "skill": "writing", "type": "write", "en": "If I had known, I wouldn't have come.", "uk": "Якби я знав / знала, я б не прийшов / не прийшла.", "it": "Se l'avessi saputo, non sarei venuto / venuta.", "answers": ["si lo hubiera sabido no habría venido", "si lo hubiese sabido no habría venido", "de haberlo sabido no habría venido", "si lo hubiera sabido no hubiera venido"] }
       ]
     }
   ]
