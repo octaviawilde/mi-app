@@ -478,9 +478,54 @@ button:active {
 }
 
 /* ---------- Profe with AI ---------- */
-/* Profe's messages keep their line breaks */
-#talk .message {
+/* Your own messages keep their line breaks */
+#talk .message.you {
   white-space: pre-line;
+}
+
+/* Profe's message: one block per line, so it's easy to read */
+#talk .message.profe {
+  margin-bottom: 22px;
+  line-height: 1.55;
+}
+
+#talk .message.profe::before {
+  display: block;
+  font-size: 12px;
+}
+
+.said,
+.translation,
+.gap {
+  display: block;
+}
+
+.said {
+  margin-bottom: 6px;
+}
+
+.gap {
+  height: 10px;
+}
+
+/* the translation of the line above: hidden until you tap [traducción] */
+.translation {
+  display: none;
+  margin: -4px 0 10px;
+  font-size: 13px;
+  font-style: italic;
+  color: var(--muted);
+}
+
+.message.open .translation {
+  display: block;
+}
+
+#talk .message .eye {
+  display: block;
+  margin-top: 4px;
+  padding: 6px 0;
+  font-size: 12px;
 }
 
 /* "+ el perro · the dog", "→ repasar": small buttons under Profe's message */

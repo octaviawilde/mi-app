@@ -8,7 +8,7 @@
 // The text the learner SEES is Spanish (with small English hints): that's content, not code.
 
 // ---------- 1. Settings (change these numbers whenever you like) ----------
-const VERSION = "1.13";                      // change it every time you publish
+const VERSION = "1.14";                      // change it every time you publish
 const NEW_PER_DAY = 15;                     // new cards per day (when the profile doesn't say)
 const BOX_DAYS = [0, 0, 1, 3, 7, 14];       // days before a card comes back, by box (1–5)
 const NEW_PER_MINUTES = { 5: 5, 15: 10, 30: 15, 60: 20 };   // minutes per day (profile) → new cards per day
@@ -1676,6 +1676,36 @@ function learnerContext() {
 const ACTION = /^\s*\[\[\s*(card|go|note|done)\s*\|(.*)\]\]\s*$/i;
 const GO_TO = { review: ["→ repasar", "go to review"], progress: ["→ progreso", "go to progress"], today: ["→ hoy", "go to today"] };
 
+// Profe's words, with the translations tucked away.
+// Profe writes each translation on its own line, starting with ">":
+//   ¿Qué tal tu día?
+//   > How was your day?
+// The app hides those lines until you tap [traducción]: you try to understand first.
+function profeMessage(words) {
+  const message = make("div", "message profe");
+  let translations = 0;
+  for (const line of words.split("\n")) {
+    const text = line.trim().replace(/\*\*/g, "");   // some AIs add **bold**: we show plain text
+    if (!text) {
+      message.append(make("span", "gap"));
+    } else if (text.startsWith(">")) {
+      message.append(make("span", "translation", text.replace(/^>\s*/, "")));
+      translations++;
+    } else {
+      message.append(make("span", "said", text));
+    }
+  }
+  if (translations) {
+    const toggle = make("button", "eye", "[traducción]");
+    toggle.onclick = () => {
+      const open = message.classList.toggle("open");
+      toggle.textContent = open ? "[ocultar]" : "[traducción]";
+    };
+    message.append(toggle);
+  }
+  return message;
+}
+
 // Show one message. Profe's action lines become buttons.
 function showMessage(message) {
   if (message.role === "user") {
@@ -1690,17 +1720,17 @@ function showMessage(message) {
     else text.push(line);
   }
   const words = text.join("\n").trim();
-  if (words) say("profe", words, undefined, talkLog);
+  if (words) talkLog.append(profeMessage(words));
 
   for (const [type, parts] of actions) {
     if (type === "card" && parts[0]) {
       const [es, en = "", example = ""] = parts;
       const have = cards.some(c => c.es.toLowerCase() === es.toLowerCase());
-      const button = make("button", "offer", have ? `✓ ${es}` : `+ ${es} · ${en}`, have ? "already in your cards" : "add to my cards");
+      const button = make("button", "offer", have ? `✓ ${es}` : `+ ${es} · ${en}`);   // + = add to my cards
       button.disabled = have;
       button.onclick = () => {
         addProfeCard(es, en, example);
-        setText(button, `✓ ${es}`, "added to your cards");
+        setText(button, `✓ ${es}`);
         button.disabled = true;
       };
       talkLog.append(button);
