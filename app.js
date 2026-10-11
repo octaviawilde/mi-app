@@ -9,7 +9,7 @@
 // they're learning, small hint under it = their own language. That's content, not code.
 
 // ---------- 1. Settings (change these numbers whenever you like) ----------
-const VERSION = "1.22";                      // change it every time you publish
+const VERSION = "1.23";                      // change it every time you publish
 const NEW_PER_DAY = 15;                     // new cards per day (when the profile doesn't say)
 const BOX_DAYS = [0, 0, 1, 3, 7, 14];       // days before a card comes back, by box (1–5)
 const NEW_PER_MINUTES = { 5: 5, 15: 10, 30: 15, 60: 20 };   // minutes per day (profile) → new cards per day
@@ -1555,12 +1555,44 @@ function canSpeak() {
   return "speechSynthesis" in window && typeof SpeechSynthesisUtterance !== "undefined";
 }
 
-function speak(text) {
-  speechSynthesis.cancel();   // stop anything still playing
-  const voice = new SpeechSynthesisUtterance(text);
-  voice.lang = VOICES[learning()] || learning();
-  voice.rate = 0.9;           // a little slower than normal speech
-  speechSynthesis.speak(voice);
+if (canSpeak()) speechSynthesis.getVoices();   // ask for the list of voices early: some phones load it slowly
+
+let utterance = null;   // what the voice is saying now (kept here: some phones forget it otherwise and stay silent)
+
+// Read a text aloud. onSilent runs if the voice never started (so the app can give the "listen" back).
+// Phones are picky here:
+//   - stopping the voice and starting it again in the same instant makes an iPhone say nothing,
+//     so we only stop it when it's really talking, and then wait a moment
+//   - naming the voice (not only the language) works on more phones
+function speak(text, onSilent) {
+  const start = () => {
+    utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = VOICES[learning()] || learning();
+    const voices = speechSynthesis.getVoices();
+    const code = v => v.lang.replace("_", "-").toLowerCase();
+    const mine = voices.filter(v => code(v).startsWith(learning()));   // the voices for the language you learn
+    // the best one first: the phone's standard Spanish voice (Mónica), then one from Spain, then any
+    const voice = mine.find(v => /m[oó]nica/i.test(v.name)) || mine.find(v => code(v) === utterance.lang.toLowerCase()) || mine[0];
+    if (voice) utterance.voice = voice;
+    utterance.rate = 0.9;   // a little slower than normal speech
+    let started = false;
+    utterance.onstart = () => { started = true; };
+    speechSynthesis.speak(utterance);
+    speechSynthesis.resume();   // some phones start "paused"
+    setTimeout(() => { if (!started && onSilent) onSilent(); }, 2500);
+  };
+  if (speechSynthesis.speaking || speechSynthesis.pending) {
+    speechSynthesis.cancel();
+    setTimeout(start, 250);
+  } else {
+    start();
+  }
+}
+
+// Under a "listen" button, after the first tap: what to check if you hear nothing
+function soundTip(button) {
+  if (ptOptions.querySelector(".sound-tip")) return;
+  button.after(make("p", "caption soon sound-tip", ...tr("pt.noSound")));
 }
 
 // Show one question and WAIT for the answer. Gives back true (right) or false (wrong / "no lo sé").
@@ -1625,11 +1657,18 @@ function askItem(item, tap) {
     } else if (item.type === "listen") {
       let left = 2;   // you can hear it twice
       const listen = make("button", "ready", `${t("pt.listen")} (${left})`, speaking.hint ? phrase(speaking.hint, "pt.listen") : "");
-      listen.onclick = () => {
-        speak(item.audio);
-        left--;
+      const showLeft = () => {
         listen.firstChild.textContent = `${t("pt.listen")} (${left})`;
         listen.disabled = left === 0;
+      };
+      listen.onclick = () => {
+        left--;
+        showLeft();
+        speak(item.audio, () => {   // the voice never started: that listen doesn't count
+          left++;
+          showLeft();
+        });
+        soundTip(listen);
       };
       ptOptions.append(listen);
       setText(ptQuestion, item.q, item.hint ? promptFor(item.hint) : "");
@@ -1713,7 +1752,10 @@ async function startLesson(step) {
     setText(ptQuestion, sentence.t, sentence.all || promptFor(sentence));   // all = the same for everyone (numbers)
     if (canSpeak()) {
       const listen = make("button", "", ...tr("pt.listen"));
-      listen.onclick = () => speak(sentence.t);
+      listen.onclick = () => {
+        speak(sentence.t);
+        soundTip(listen);
+      };
       ptOptions.append(listen);
     }
     if (await waitForTap([next, exit]) === "exit") return show("today");

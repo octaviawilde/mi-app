@@ -48,7 +48,7 @@
   "stat.learned": "learned",
   "stat.seen": "seen",
   "stat.today": "for today",
-  "progress.writing": "✍ writing: {practised} practised · {learned} learned",
+  "progress.writing": "writing: {practised} practised · {learned} learned",
   "progress.byTopic": "by topic",
   "progress.legend": "█ learned · ▒ seen · ░ new",
   "progress.weak": "weak spots",
@@ -135,7 +135,7 @@
   "ai.url": "address (URL)",
   "ai.save": "save and test",
   "ai.forget": "delete",
-  "ai.private": "🔒 your key lives only on this phone and is never in backups",
+  "ai.private": "your key lives only on this phone and is never in backups",
   "ai.openrouter": "OpenRouter (many models)",
   "ai.custom": "Other (OpenAI-compatible)",
   "ai.refusal": "Profe can't answer that",
@@ -156,7 +156,7 @@
   "ai.connected": "✓ connected: {provider} · {model}",
   "ai.deleted": "key deleted from this phone",
   "key.looks": "{n} characters · {start}…{end}",
-  "key.wrong": "⚠ {looks}: a {provider} key starts with \"{starts}\"",
+  "key.wrong": "! {looks}: a {provider} key starts with \"{starts}\"",
   "models.none": "paste your key to see your models",
   "models.other": "✎ other (type the name)",
   "models.free": "free",
@@ -210,7 +210,7 @@
   "pt.gapTap": "choose the missing word",
   "task.freeLesson": "lesson with Profe",
   "lesson.free": "I'd like a lesson at my level.",
-  "ai.busy": "the AI ({model}) is overloaded right now. Wait a minute and send again, or pick another model in ⚙.",
+  "ai.busy": "the AI ({model}) is overloaded right now. Wait a minute and send again, or pick another model in ⚙︎.",
   "ai.backup": "your model was overloaded: {model} answered",
   "lesson.progress": "lesson · {title} · {n} of {total}",
   "lesson.exit": "leave the lesson",
@@ -221,5 +221,6 @@
   "lesson.clear": "[ clear ]",
   "lesson.done": "✓ lesson completed: {right} of {total}",
   "lesson.retry": "almost: {right} of {total}. Repeat the lesson to complete it.",
-  "lesson.again": "↺ repeat the lesson"
+  "lesson.again": "↺ repeat the lesson",
+  "pt.noSound": "no sound? turn the volume up and switch off silent mode"
 }

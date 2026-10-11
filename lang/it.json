@@ -48,7 +48,7 @@
   "stat.learned": "imparate",
   "stat.seen": "viste",
   "stat.today": "per oggi",
-  "progress.writing": "✍ scrittura: {practised} praticate · {learned} imparate",
+  "progress.writing": "scrittura: {practised} praticate · {learned} imparate",
   "progress.byTopic": "per tema",
   "progress.legend": "█ imparata · ▒ vista · ░ nuova",
   "progress.weak": "punti deboli",
@@ -135,7 +135,7 @@
   "ai.url": "indirizzo (URL)",
   "ai.save": "salva e prova",
   "ai.forget": "elimina",
-  "ai.private": "🔒 la tua chiave vive solo su questo telefono e non è mai nei backup",
+  "ai.private": "la tua chiave vive solo su questo telefono e non è mai nei backup",
   "ai.openrouter": "OpenRouter (molti modelli)",
   "ai.custom": "Altro (compatibile con OpenAI)",
   "ai.refusal": "Profe non può rispondere a questo",
@@ -156,7 +156,7 @@
   "ai.connected": "✓ collegato: {provider} · {model}",
   "ai.deleted": "chiave eliminata da questo telefono",
   "key.looks": "{n} caratteri · {start}…{end}",
-  "key.wrong": "⚠ {looks}: una chiave di {provider} inizia con «{starts}»",
+  "key.wrong": "! {looks}: una chiave di {provider} inizia con «{starts}»",
   "models.none": "incolla la tua chiave per vedere i modelli",
   "models.other": "✎ altro (scrivi il nome)",
   "models.free": "gratis",
@@ -210,7 +210,7 @@
   "pt.gapTap": "scegli la parola che manca",
   "task.freeLesson": "lezione con Profe",
   "lesson.free": "Vorrei una lezione del mio livello.",
-  "ai.busy": "l'IA ({model}) è sovraccarica in questo momento. Aspetta un minuto e invia di nuovo, o scegli un altro modello in ⚙.",
+  "ai.busy": "l'IA ({model}) è sovraccarica in questo momento. Aspetta un minuto e invia di nuovo, o scegli un altro modello in ⚙︎.",
   "ai.backup": "il tuo modello era sovraccarico: ha risposto {model}",
   "lesson.progress": "lezione · {title} · {n} di {total}",
   "lesson.exit": "esci dalla lezione",
@@ -221,5 +221,6 @@
   "lesson.clear": "[ cancella ]",
   "lesson.done": "✓ lezione completata: {right} di {total}",
   "lesson.retry": "quasi: {right} di {total}. Ripeti la lezione per completarla.",
-  "lesson.again": "↺ ripeti la lezione"
+  "lesson.again": "↺ ripeti la lezione",
+  "pt.noSound": "non si sente? alza il volume e togli la modalità silenziosa"
 }

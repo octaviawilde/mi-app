@@ -15,6 +15,7 @@ body {
   background: var(--bg);
   color: var(--text);
   font-family: "SF Mono", Menlo, Consolas, monospace;
+  font-variant-emoji: text;   /* symbols like ✓ ⚙ → stay plain text, never colour emoji */
   font-size: 18px;
   line-height: 1.6;
 }

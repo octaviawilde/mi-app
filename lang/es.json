@@ -48,7 +48,7 @@
   "stat.learned": "aprendidas",
   "stat.seen": "vistas",
   "stat.today": "para hoy",
-  "progress.writing": "✍ escritura: {practised} practicadas · {learned} aprendidas",
+  "progress.writing": "escritura: {practised} practicadas · {learned} aprendidas",
   "progress.byTopic": "por tema",
   "progress.legend": "█ aprendida · ▒ vista · ░ nueva",
   "progress.weak": "puntos débiles",
@@ -135,7 +135,7 @@
   "ai.url": "dirección (URL)",
   "ai.save": "guardar y probar",
   "ai.forget": "borrar",
-  "ai.private": "🔒 tu clave solo vive en este teléfono y nunca está en los backups",
+  "ai.private": "tu clave solo vive en este teléfono y nunca está en los backups",
   "ai.openrouter": "OpenRouter (muchos modelos)",
   "ai.custom": "Otro (compatible con OpenAI)",
   "ai.refusal": "Profe no puede responder a eso",
@@ -156,7 +156,7 @@
   "ai.connected": "✓ conectado: {provider} · {model}",
   "ai.deleted": "clave borrada de este teléfono",
   "key.looks": "{n} caracteres · {start}…{end}",
-  "key.wrong": "⚠ {looks}: una clave de {provider} empieza por «{starts}»",
+  "key.wrong": "! {looks}: una clave de {provider} empieza por «{starts}»",
   "models.none": "pega tu clave para ver tus modelos",
   "models.other": "✎ otro (escribir el nombre)",
   "models.free": "gratis",
@@ -210,7 +210,7 @@
   "pt.gapTap": "elige la palabra que falta",
   "task.freeLesson": "clase con Profe",
   "lesson.free": "Quiero una clase de mi nivel.",
-  "ai.busy": "la IA ({model}) está saturada ahora mismo. Espera un minuto y envía otra vez, o elige otro modelo en ⚙.",
+  "ai.busy": "la IA ({model}) está saturada ahora mismo. Espera un minuto y envía otra vez, o elige otro modelo en ⚙︎.",
   "ai.backup": "tu modelo estaba saturado: ha respondido {model}",
   "lesson.progress": "clase · {title} · {n} de {total}",
   "lesson.exit": "salir de la clase",
@@ -221,5 +221,6 @@
   "lesson.clear": "[ borrar ]",
   "lesson.done": "✓ clase completada: {right} de {total}",
   "lesson.retry": "casi: {right} de {total}. Repite la clase para completarla.",
-  "lesson.again": "↺ repetir la clase"
+  "lesson.again": "↺ repetir la clase",
+  "pt.noSound": "¿no se oye? sube el volumen y quita el modo silencio"
 }
