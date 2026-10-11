@@ -1,11 +1,11 @@
 {
-  "_note": "Profe's first meeting with a new learner. Part of the Núcleo (the core: the same for every learner). Each step: what Profe says (says), how the learner answers (type: text / one / many / levels / end), and where the answer is saved in the profile (saveAs). Every line exists in the app's 4 languages (es, en, uk, it); 'all' = the same in every language. The app fills in {name} and {language}. To change the interview, change this file: no code needed. Language flags: own = the language's name in that language · ui = the app can speak it (text in lang/<code>.json) · teach = Profe can teach it today · planned = on the plan (only these show as \"coming soon\"). Typed answers: check = name / place (a shape check; a place Profe doesn't know is confirmed, not blocked).",
+  "_note": "Profe's first meeting with a new learner. Part of the Núcleo (the core: the same for every learner). Each step: what Profe says (says), how the learner answers (type: text / one / many / levels / end), and where the answer is saved in the profile (saveAs). Every line exists in the app's 5 languages (es, en, uk, it, ru); 'all' = the same in every language. The app fills in {name} and {language}. To change the interview, change this file: no code needed. Language flags: own = the language's name in that language · ui = the app can speak it (text in lang/<code>.json) · teach = Profe can teach it today · planned = on the plan (only these show as \"coming soon\"). Typed answers: check = name / place (a shape check; a place Profe doesn't know is confirmed, not blocked).",
   "languages": {
     "es": { "own": "Español", "ui": true, "teach": true, "planned": true },
     "en": { "own": "English", "ui": true, "teach": false, "planned": true },
     "it": { "own": "Italiano", "ui": true, "teach": false, "planned": true },
     "uk": { "own": "Українська", "ui": true, "teach": false, "planned": true },
-    "ru": { "own": "Русский", "ui": false, "teach": false, "planned": true },
+    "ru": { "own": "Русский", "ui": true, "teach": false, "planned": true },
     "ar": { "own": "العربية", "ui": false, "teach": false, "planned": false },
     "fr": { "own": "Français", "ui": false, "teach": false, "planned": false },
     "de": { "own": "Deutsch", "ui": false, "teach": false, "planned": false },
@@ -20,7 +20,7 @@
       "saveAs": "ui",
       "options": "interface",
       "says": [
-        { "all": "Hola · Hello · Ciao · Привіт" }
+        { "all": "Hola · Hello · Ciao · Привіт · Привет" }
       ]
     },
     {
@@ -29,9 +29,9 @@
       "saveAs": "name",
       "check": "name",
       "says": [
-        { "es": "¡Hola! Soy Profe, tu profesor de idiomas.", "en": "Hi! I'm Profe, your language teacher.", "uk": "Привіт! Я Profe, твій учитель мов.", "it": "Ciao! Sono Profe, il tuo insegnante di lingue." },
-        { "es": "Antes de empezar, quiero conocerte.", "en": "Before we start, I want to get to know you.", "uk": "Перш ніж почати, я хочу з тобою познайомитися.", "it": "Prima di iniziare, voglio conoscerti." },
-        { "es": "¿Cómo te llamas?", "en": "What's your name?", "uk": "Як тебе звати?", "it": "Come ti chiami?" }
+        { "es": "¡Hola! Soy Profe, tu profesor de idiomas.", "en": "Hi! I'm Profe, your language teacher.", "uk": "Привіт! Я Profe, твій учитель мов.", "it": "Ciao! Sono Profe, il tuo insegnante di lingue.", "ru": "Привет! Я Profe, твой учитель языков." },
+        { "es": "Antes de empezar, quiero conocerte.", "en": "Before we start, I want to get to know you.", "uk": "Перш ніж почати, я хочу з тобою познайомитися.", "it": "Prima di iniziare, voglio conoscerti.", "ru": "Прежде чем начать, я хочу с тобой познакомиться." },
+        { "es": "¿Cómo te llamas?", "en": "What's your name?", "uk": "Як тебе звати?", "it": "Come ti chiami?", "ru": "Как тебя зовут?" }
       ]
     },
     {
@@ -40,8 +40,8 @@
       "saveAs": "native",
       "options": "languages",
       "says": [
-        { "es": "¡Mucho gusto, {name}!", "en": "Nice to meet you, {name}!", "uk": "Приємно познайомитися, {name}!", "it": "Piacere, {name}!" },
-        { "es": "¿Cuál es tu lengua materna?", "en": "What's your native language?", "uk": "Яка твоя рідна мова?", "it": "Qual è la tua lingua madre?" }
+        { "es": "¡Mucho gusto, {name}!", "en": "Nice to meet you, {name}!", "uk": "Приємно познайомитися, {name}!", "it": "Piacere, {name}!", "ru": "Приятно познакомиться, {name}!" },
+        { "es": "¿Cuál es tu lengua materna?", "en": "What's your native language?", "uk": "Яка твоя рідна мова?", "it": "Qual è la tua lingua madre?", "ru": "Какой твой родной язык?" }
       ]
     },
     {
@@ -50,19 +50,19 @@
       "saveAs": "others",
       "options": "languages",
       "says": [
-        { "es": "¿Hablas otros idiomas? Elige todos.", "en": "Do you speak other languages? Pick them all.", "uk": "Чи говориш ти іншими мовами? Обери всі.", "it": "Parli altre lingue? Sceglile tutte." }
+        { "es": "¿Hablas otros idiomas? Elige todos.", "en": "Do you speak other languages? Pick them all.", "uk": "Чи говориш ти іншими мовами? Обери всі.", "it": "Parli altre lingue? Sceglile tutte.", "ru": "Говоришь ли ты на других языках? Выбери все." }
       ]
     },
     {
       "id": "levels",
       "type": "levels",
       "says": [
-        { "es": "{language}: ¿qué tal lo hablas?", "en": "{language}: how well do you speak it?", "uk": "{language}: як добре ти нею володієш?", "it": "{language}: quanto bene lo parli?" }
+        { "es": "{language}: ¿qué tal lo hablas?", "en": "{language}: how well do you speak it?", "uk": "{language}: як добре ти нею володієш?", "it": "{language}: quanto bene lo parli?", "ru": "{language}: насколько хорошо ты им владеешь?" }
       ],
       "options": [
-        { "value": "basic", "es": "básico · A1–A2", "en": "beginner · A1–A2", "uk": "початковий · A1–A2", "it": "base · A1–A2" },
-        { "value": "intermediate", "es": "medio · B1–B2", "en": "intermediate · B1–B2", "uk": "середній · B1–B2", "it": "intermedio · B1–B2" },
-        { "value": "advanced", "es": "alto · C1–C2", "en": "advanced · C1–C2", "uk": "високий · C1–C2", "it": "avanzato · C1–C2" }
+        { "value": "basic", "es": "básico · A1–A2", "en": "beginner · A1–A2", "uk": "початковий · A1–A2", "it": "base · A1–A2", "ru": "начальный · A1–A2" },
+        { "value": "intermediate", "es": "medio · B1–B2", "en": "intermediate · B1–B2", "uk": "середній · B1–B2", "it": "intermedio · B1–B2", "ru": "средний · B1–B2" },
+        { "value": "advanced", "es": "alto · C1–C2", "en": "advanced · C1–C2", "uk": "високий · C1–C2", "it": "avanzato · C1–C2", "ru": "высокий · C1–C2" }
       ]
     },
     {
@@ -71,7 +71,7 @@
       "saveAs": "learning",
       "options": "teachable",
       "says": [
-        { "es": "¿Qué idioma quieres aprender conmigo?", "en": "Which language do you want to learn with me?", "uk": "Яку мову ти хочеш вивчати зі мною?", "it": "Quale lingua vuoi imparare con me?" }
+        { "es": "¿Qué idioma quieres aprender conmigo?", "en": "Which language do you want to learn with me?", "uk": "Яку мову ти хочеш вивчати зі мною?", "it": "Quale lingua vuoi imparare con me?", "ru": "Какой язык ты хочешь учить со мной?" }
       ]
     },
     {
@@ -79,14 +79,14 @@
       "type": "one",
       "saveAs": "level",
       "says": [
-        { "es": "¿Cuánto sabes ya?", "en": "How much do you know already?", "uk": "Скільки ти вже знаєш?", "it": "Quanto sai già?" }
+        { "es": "¿Cuánto sabes ya?", "en": "How much do you know already?", "uk": "Скільки ти вже знаєш?", "it": "Quanto sai già?", "ru": "Сколько ты уже знаешь?" }
       ],
       "options": [
-        { "value": "pre-A1", "es": "nada, empiezo de cero", "en": "nothing, I'm starting from zero", "uk": "нічого, починаю з нуля", "it": "niente, parto da zero" },
-        { "value": "A1", "es": "unas palabras", "en": "a few words", "uk": "кілька слів", "it": "qualche parola" },
-        { "value": "A2", "es": "frases sencillas", "en": "simple sentences", "uk": "прості речення", "it": "frasi semplici" },
-        { "value": "B1", "es": "puedo conversar", "en": "I can hold a conversation", "uk": "можу підтримати розмову", "it": "riesco a conversare" },
-        { "value": "B2", "es": "lo hablo bien", "en": "I speak it well", "uk": "добре розмовляю", "it": "lo parlo bene" }
+        { "value": "pre-A1", "es": "nada, empiezo de cero", "en": "nothing, I'm starting from zero", "uk": "нічого, починаю з нуля", "it": "niente, parto da zero", "ru": "ничего, начинаю с нуля" },
+        { "value": "A1", "es": "unas palabras", "en": "a few words", "uk": "кілька слів", "it": "qualche parola", "ru": "несколько слов" },
+        { "value": "A2", "es": "frases sencillas", "en": "simple sentences", "uk": "прості речення", "it": "frasi semplici", "ru": "простые фразы" },
+        { "value": "B1", "es": "puedo conversar", "en": "I can hold a conversation", "uk": "можу підтримати розмову", "it": "riesco a conversare", "ru": "могу поддержать разговор" },
+        { "value": "B2", "es": "lo hablo bien", "en": "I speak it well", "uk": "добре розмовляю", "it": "lo parlo bene", "ru": "хорошо говорю" }
       ]
     },
     {
@@ -95,11 +95,11 @@
       "saveAs": "hints",
       "options": "hints",
       "says": [
-        { "es": "Vale. Más adelante te haré una prueba corta para saberlo bien.", "en": "OK. Later I'll give you a short test to know for sure.", "uk": "Добре. Пізніше я дам тобі короткий тест, щоб знати точно.", "it": "Va bene. Più avanti ti farò un breve test per saperlo con certezza." },
-        { "es": "Debajo de mis palabras pondré una pista pequeña. ¿En qué idioma?", "en": "Under my words I'll put a small hint. In which language?", "uk": "Під моїми словами буде маленька підказка. Якою мовою?", "it": "Sotto le mie parole metterò un piccolo suggerimento. In che lingua?" }
+        { "es": "Vale. Más adelante te haré una prueba corta para saberlo bien.", "en": "OK. Later I'll give you a short test to know for sure.", "uk": "Добре. Пізніше я дам тобі короткий тест, щоб знати точно.", "it": "Va bene. Più avanti ti farò un breve test per saperlo con certezza.", "ru": "Хорошо. Позже я дам тебе короткий тест, чтобы знать точно." },
+        { "es": "Debajo de mis palabras pondré una pista pequeña. ¿En qué idioma?", "en": "Under my words I'll put a small hint. In which language?", "uk": "Під моїми словами буде маленька підказка. Якою мовою?", "it": "Sotto le mie parole metterò un piccolo suggerimento. In che lingua?", "ru": "Под моими словами будет маленькая подсказка. На каком языке?" }
       ],
       "extra": [
-        { "value": "none", "es": "sin pistas", "en": "no hints", "uk": "без підказок", "it": "senza suggerimenti" }
+        { "value": "none", "es": "sin pistas", "en": "no hints", "uk": "без підказок", "it": "senza suggerimenti", "ru": "без подсказок" }
       ]
     },
     {
@@ -107,16 +107,16 @@
       "type": "many",
       "saveAs": "reasons",
       "says": [
-        { "es": "¿Por qué aprendes este idioma?", "en": "Why are you learning this language?", "uk": "Навіщо ти вивчаєш цю мову?", "it": "Perché impari questa lingua?" }
+        { "es": "¿Por qué aprendes este idioma?", "en": "Why are you learning this language?", "uk": "Навіщо ти вивчаєш цю мову?", "it": "Perché impari questa lingua?", "ru": "Зачем ты учишь этот язык?" }
       ],
       "options": [
-        { "value": "live", "es": "vivo aquí", "en": "I live here", "uk": "я тут живу", "it": "vivo qui" },
-        { "value": "people", "es": "amigos y gente", "en": "friends and people", "uk": "друзі та люди", "it": "amici e gente" },
-        { "value": "work", "es": "trabajo", "en": "work", "uk": "робота", "it": "lavoro" },
-        { "value": "studies", "es": "estudios", "en": "studies", "uk": "навчання", "it": "studio" },
-        { "value": "travel", "es": "viajar", "en": "travel", "uk": "подорожі", "it": "viaggiare" },
-        { "value": "exam", "es": "un examen", "en": "an exam or certificate", "uk": "іспит або сертифікат", "it": "un esame" },
-        { "value": "fun", "es": "porque me gusta", "en": "just because I like it", "uk": "бо мені подобається", "it": "perché mi piace" }
+        { "value": "live", "es": "vivo aquí", "en": "I live here", "uk": "я тут живу", "it": "vivo qui", "ru": "я здесь живу" },
+        { "value": "people", "es": "amigos y gente", "en": "friends and people", "uk": "друзі та люди", "it": "amici e gente", "ru": "друзья и люди" },
+        { "value": "work", "es": "trabajo", "en": "work", "uk": "робота", "it": "lavoro", "ru": "работа" },
+        { "value": "studies", "es": "estudios", "en": "studies", "uk": "навчання", "it": "studio", "ru": "учёба" },
+        { "value": "travel", "es": "viajar", "en": "travel", "uk": "подорожі", "it": "viaggiare", "ru": "путешествия" },
+        { "value": "exam", "es": "un examen", "en": "an exam or certificate", "uk": "іспит або сертифікат", "it": "un esame", "ru": "экзамен или сертификат" },
+        { "value": "fun", "es": "porque me gusta", "en": "just because I like it", "uk": "бо мені подобається", "it": "perché mi piace", "ru": "потому что мне нравится" }
       ]
     },
     {
@@ -126,8 +126,8 @@
       "check": "place",
       "optional": true,
       "says": [
-        { "es": "¿En qué ciudad vives?", "en": "Which city do you live in?", "uk": "У якому місті ти живеш?", "it": "In che città vivi?" },
-        { "es": "Así tus misiones serán en tu ciudad.", "en": "That way your missions will be in your city.", "uk": "Так твої завдання будуть у твоєму місті.", "it": "Così le tue missioni saranno nella tua città." }
+        { "es": "¿En qué ciudad vives?", "en": "Which city do you live in?", "uk": "У якому місті ти живеш?", "it": "In che città vivi?", "ru": "В каком городе ты живёшь?" },
+        { "es": "Así tus misiones serán en tu ciudad.", "en": "That way your missions will be in your city.", "uk": "Так твої завдання будуть у твоєму місті.", "it": "Così le tue missioni saranno nella tua città.", "ru": "Так твои задания будут в твоём городе." }
       ],
       "known": ["Valencia", "València", "Madrid", "Barcelona", "Sevilla", "Seville", "Málaga", "Bilbao", "Zaragoza", "Alicante", "Granada", "Murcia", "Palma", "Las Palmas", "Tenerife", "Valladolid", "Córdoba", "Salamanca", "San Sebastián", "Donostia", "Santander", "Oviedo", "Gijón", "A Coruña", "Vigo", "Santiago de Compostela", "Pamplona", "Castellón", "Benidorm", "Gandia", "Tarragona", "Girona", "Cádiz", "Marbella", "Toledo", "Ibiza", "Ciudad de México", "Mexico City", "Buenos Aires", "Bogotá", "Lima", "Santiago", "Caracas", "Quito", "Montevideo", "La Habana", "Havana", "Guadalajara", "Medellín", "Roma", "Rome", "Milano", "Milan", "Napoli", "Naples", "Torino", "Turin", "Firenze", "Florence", "Bologna", "Venezia", "Venice", "Palermo", "Genova", "Bari", "Kyiv", "Kiev", "Lviv", "Odesa", "Odessa", "Kharkiv", "Dnipro", "Moscú", "Moscow", "Moskva", "San Petersburgo", "Saint Petersburg", "London", "Londres", "Manchester", "Dublin", "Dublín", "New York", "Nueva York", "Los Angeles", "Miami", "Toronto", "Sydney", "París", "Paris", "Berlín", "Berlin", "Lisboa", "Lisbon", "Porto", "Amsterdam", "Bruselas", "Brussels", "Viena", "Vienna", "Varsovia", "Warsaw", "Praga", "Prague", "Manama", "Dubai", "Dubái", "Abu Dhabi", "Doha", "Riad", "Riyadh", "El Cairo", "Cairo", "Casablanca", "Beirut", "Amman", "Estambul", "Istanbul"]
     },
@@ -136,11 +136,11 @@
       "type": "one",
       "saveAs": "school",
       "says": [
-        { "es": "¿Vas a clases de este idioma?", "en": "Do you go to classes for this language?", "uk": "Чи ходиш ти на заняття з цієї мови?", "it": "Vai a lezione di questa lingua?" }
+        { "es": "¿Vas a clases de este idioma?", "en": "Do you go to classes for this language?", "uk": "Чи ходиш ти на заняття з цієї мови?", "it": "Vai a lezione di questa lingua?", "ru": "Ходишь ли ты на занятия по этому языку?" }
       ],
       "options": [
-        { "value": true, "es": "sí, voy a una escuela", "en": "yes, I go to a school", "uk": "так, ходжу до школи", "it": "sì, vado a una scuola" },
-        { "value": false, "es": "no, solo contigo", "en": "no, just with you", "uk": "ні, лише з тобою", "it": "no, solo con te" }
+        { "value": true, "es": "sí, voy a una escuela", "en": "yes, I go to a school", "uk": "так, ходжу до школи", "it": "sì, vado a una scuola", "ru": "да, хожу в школу" },
+        { "value": false, "es": "no, solo contigo", "en": "no, just with you", "uk": "ні, лише з тобою", "it": "no, solo con te", "ru": "нет, только с тобой" }
       ]
     },
     {
@@ -148,21 +148,21 @@
       "type": "many",
       "saveAs": "interests",
       "says": [
-        { "es": "¿Qué te gusta? Usaré tus gustos en los ejemplos.", "en": "What do you like? I'll use your interests in the examples.", "uk": "Що тобі подобається? Я використаю твої інтереси в прикладах.", "it": "Cosa ti piace? Userò i tuoi gusti negli esempi." }
+        { "es": "¿Qué te gusta? Usaré tus gustos en los ejemplos.", "en": "What do you like? I'll use your interests in the examples.", "uk": "Що тобі подобається? Я використаю твої інтереси в прикладах.", "it": "Cosa ti piace? Userò i tuoi gusti negli esempi.", "ru": "Что тебе нравится? Я использую твои интересы в примерах." }
       ],
       "options": [
-        { "value": "food", "es": "comida", "en": "food", "uk": "їжа", "it": "cibo" },
-        { "value": "sport", "es": "deporte", "en": "sport", "uk": "спорт", "it": "sport" },
-        { "value": "music", "es": "música", "en": "music", "uk": "музика", "it": "musica" },
-        { "value": "animals", "es": "animales", "en": "animals", "uk": "тварини", "it": "animali" },
-        { "value": "nature", "es": "naturaleza", "en": "nature", "uk": "природа", "it": "natura" },
-        { "value": "art", "es": "arte", "en": "art", "uk": "мистецтво", "it": "arte" },
-        { "value": "tech", "es": "tecnología", "en": "technology", "uk": "технології", "it": "tecnologia" },
-        { "value": "travel", "es": "viajes", "en": "travel", "uk": "подорожі", "it": "viaggi" },
-        { "value": "shopping", "es": "compras", "en": "shopping", "uk": "покупки", "it": "shopping" },
-        { "value": "film", "es": "cine y series", "en": "films and series", "uk": "кіно та серіали", "it": "cinema e serie" },
-        { "value": "books", "es": "libros", "en": "books", "uk": "книги", "it": "libri" },
-        { "value": "games", "es": "juegos", "en": "games", "uk": "ігри", "it": "giochi" }
+        { "value": "food", "es": "comida", "en": "food", "uk": "їжа", "it": "cibo", "ru": "еда" },
+        { "value": "sport", "es": "deporte", "en": "sport", "uk": "спорт", "it": "sport", "ru": "спорт" },
+        { "value": "music", "es": "música", "en": "music", "uk": "музика", "it": "musica", "ru": "музыка" },
+        { "value": "animals", "es": "animales", "en": "animals", "uk": "тварини", "it": "animali", "ru": "животные" },
+        { "value": "nature", "es": "naturaleza", "en": "nature", "uk": "природа", "it": "natura", "ru": "природа" },
+        { "value": "art", "es": "arte", "en": "art", "uk": "мистецтво", "it": "arte", "ru": "искусство" },
+        { "value": "tech", "es": "tecnología", "en": "technology", "uk": "технології", "it": "tecnologia", "ru": "технологии" },
+        { "value": "travel", "es": "viajes", "en": "travel", "uk": "подорожі", "it": "viaggi", "ru": "путешествия" },
+        { "value": "shopping", "es": "compras", "en": "shopping", "uk": "покупки", "it": "shopping", "ru": "покупки" },
+        { "value": "film", "es": "cine y series", "en": "films and series", "uk": "кіно та серіали", "it": "cinema e serie", "ru": "кино и сериалы" },
+        { "value": "books", "es": "libros", "en": "books", "uk": "книги", "it": "libri", "ru": "книги" },
+        { "value": "games", "es": "juegos", "en": "games", "uk": "ігри", "it": "giochi", "ru": "игры" }
       ]
     },
     {
@@ -170,27 +170,27 @@
       "type": "one",
       "saveAs": "minutes",
       "says": [
-        { "es": "Última pregunta: ¿cuánto tiempo tienes al día?", "en": "Last question: how much time do you have per day?", "uk": "Останнє питання: скільки часу ти маєш на день?", "it": "Ultima domanda: quanto tempo hai al giorno?" }
+        { "es": "Última pregunta: ¿cuánto tiempo tienes al día?", "en": "Last question: how much time do you have per day?", "uk": "Останнє питання: скільки часу ти маєш на день?", "it": "Ultima domanda: quanto tempo hai al giorno?", "ru": "Последний вопрос: сколько времени у тебя есть в день?" }
       ],
       "options": [
-        { "value": 5, "es": "5 min · 5 palabras nuevas", "en": "5 min · 5 new words", "uk": "5 хв · 5 нових слів", "it": "5 min · 5 parole nuove" },
-        { "value": 15, "es": "15 min · 10 palabras nuevas", "en": "15 min · 10 new words", "uk": "15 хв · 10 нових слів", "it": "15 min · 10 parole nuove" },
-        { "value": 30, "es": "30 min · 15 palabras nuevas", "en": "30 min · 15 new words", "uk": "30 хв · 15 нових слів", "it": "30 min · 15 parole nuove" },
-        { "value": 60, "es": "1 hora · 20 palabras nuevas", "en": "1 hour · 20 new words", "uk": "1 година · 20 нових слів", "it": "1 ora · 20 parole nuove" }
+        { "value": 5, "es": "5 min · 5 palabras nuevas", "en": "5 min · 5 new words", "uk": "5 хв · 5 нових слів", "it": "5 min · 5 parole nuove", "ru": "5 мин · 5 новых слов" },
+        { "value": 15, "es": "15 min · 10 palabras nuevas", "en": "15 min · 10 new words", "uk": "15 хв · 10 нових слів", "it": "15 min · 10 parole nuove", "ru": "15 мин · 10 новых слов" },
+        { "value": 30, "es": "30 min · 15 palabras nuevas", "en": "30 min · 15 new words", "uk": "30 хв · 15 нових слів", "it": "30 min · 15 parole nuove", "ru": "30 мин · 15 новых слов" },
+        { "value": 60, "es": "1 hora · 20 palabras nuevas", "en": "1 hour · 20 new words", "uk": "1 година · 20 нових слів", "it": "1 ora · 20 parole nuove", "ru": "1 час · 20 новых слов" }
       ]
     },
     {
       "id": "end",
       "type": "end",
       "says": [
-        { "es": "¡Perfecto, {name}! Esta es tu ficha:", "en": "Perfect, {name}! This is your profile:", "uk": "Чудово, {name}! Ось твій профіль:", "it": "Perfetto, {name}! Questa è la tua scheda:" }
+        { "es": "¡Perfecto, {name}! Esta es tu ficha:", "en": "Perfect, {name}! This is your profile:", "uk": "Чудово, {name}! Ось твій профіль:", "it": "Perfetto, {name}! Questa è la tua scheda:", "ru": "Отлично, {name}! Вот твой профиль:" }
       ],
       "after": [
-        { "es": "Tu ficha solo vive en este teléfono. Nadie más la ve.", "en": "Your profile lives only on this phone. Nobody else sees it.", "uk": "Твій профіль зберігається лише на цьому телефоні. Ніхто інший його не бачить.", "it": "La tua scheda vive solo su questo telefono. Nessun altro la vede." }
+        { "es": "Tu ficha solo vive en este teléfono. Nadie más la ve.", "en": "Your profile lives only on this phone. Nobody else sees it.", "uk": "Твій профіль зберігається лише на цьому телефоні. Ніхто інший його не бачить.", "it": "La tua scheda vive solo su questo telefono. Nessun altro la vede.", "ru": "Твой профиль хранится только на этом телефоне. Больше никто его не видит." }
       ],
       "options": [
-        { "value": "start", "es": "¡empezamos! →", "en": "let's start! →", "uk": "починаємо! →", "it": "cominciamo! →" },
-        { "value": "again", "es": "↺ otra vez", "en": "↺ start over", "uk": "↺ спочатку", "it": "↺ da capo" }
+        { "value": "start", "es": "¡empezamos! →", "en": "let's start! →", "uk": "починаємо! →", "it": "cominciamo! →", "ru": "начинаем! →" },
+        { "value": "again", "es": "↺ otra vez", "en": "↺ start over", "uk": "↺ спочатку", "it": "↺ da capo", "ru": "↺ сначала" }
       ]
     }
   ]

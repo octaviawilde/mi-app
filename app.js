@@ -5,11 +5,11 @@
 //   11 screens · 12 progress · 13 today · 14 Profe's interview · 15 Profe's map (curriculum)
 //   16 placement test · 17 Profe with AI (chat) · 18 offline + updates · 19 start
 // The code is in English so anyone can read it and contribute.
-// The text the learner SEES lives in lang/<code>.json (es, en, uk, it): big = the language
+// The text the learner SEES lives in lang/<code>.json (es, en, uk, it, ru): big = the language
 // they're learning, small hint under it = their own language. That's content, not code.
 
 // ---------- 1. Settings (change these numbers whenever you like) ----------
-const VERSION = "1.16";                      // change it every time you publish
+const VERSION = "1.17";                      // change it every time you publish
 const NEW_PER_DAY = 15;                     // new cards per day (when the profile doesn't say)
 const BOX_DAYS = [0, 0, 1, 3, 7, 14];       // days before a card comes back, by box (1–5)
 const NEW_PER_MINUTES = { 5: 5, 15: 10, 30: 15, 60: 20 };   // minutes per day (profile) → new cards per day
@@ -40,7 +40,7 @@ let plan = null;            // today's plan (from Profe)
 let done = {};              // ticked tasks: { "2026-10-09": ["mission"] }
 let interview = null;       // Profe's interview questions (profe/interview.json)
 
-const UI_LANGUAGES = ["es", "en", "uk", "it"];   // the app's own text exists in these (lang/<code>.json)
+const UI_LANGUAGES = ["es", "en", "uk", "it", "ru"];   // the app's own text exists in these (lang/<code>.json)
 let strings = {};                                 // strings.es = { "nav.today": "hoy", ... }
 let speaking = { main: "en", hint: null };        // main = the big text · hint = the small text under it
 
@@ -115,7 +115,7 @@ function contentHint(english) {
 
 // What a card means, in your language when the card has it
 function meaning(c) {
-  return c[speaking.hint] || c.en;
+  return c[speaking.hint] || c[profile && profile.ui] || c.en || c.es || "";
 }
 
 // The language you're learning ("es")
@@ -174,8 +174,8 @@ async function loadText(path) {
 
 // Your deck + Profe's cards (a Profe card that's already in your deck isn't added twice)
 function setCards(deck) {
-  const inDeck = new Set(deck.map(c => c.es.toLowerCase()));
-  cards = [...deck, ...profeCards.filter(c => !inDeck.has(c.es.toLowerCase()))];
+  const inDeck = new Set(deck.map(c => c.term.toLowerCase()));
+  cards = [...deck, ...profeCards.filter(c => !inDeck.has(c.term.toLowerCase()))];
 }
 
 // Read / write something saved on this device
@@ -232,8 +232,16 @@ function migrateProgress(old) {
   return result;
 }
 
+// Since v1.17 a card's word is "term" (it can be Spanish, English...). Older cards called it "es".
 function migrateCards(old) {
-  return old.map(c => renameKeys(c, CARD_NAMES));
+  return old.map(c => {
+    const card = renameKeys(c, CARD_NAMES);
+    if (card.term === undefined) {
+      card.term = card.es;
+      delete card.es;
+    }
+    return card;
+  });
 }
 
 function migratePlan(old) {
@@ -293,13 +301,11 @@ async function start() {
   progress = migrateProgress(loadSaved("progress") || {});
   done = migrateDone(loadSaved("done") || {});
   profile = migrateProfile(loadSaved("profile"));
-  profeCards = loadSaved("profeCards") || [];
-  setCards(migrateCards((await loadJson("cards.json")) || loadSaved("cards") || (await loadJson("sample.json")) || []));
+  profeCards = migrateCards(loadSaved("profeCards") || []);
   plan = migratePlan((await loadJson("today.json")) || loadSaved("plan"));
   interview = await loadJson("profe/interview.json");
   profeCore = await loadText("profe/core.md");   // Profe's teaching method, for the AI
-  curriculum = await loadJson(`profe/curriculum/${(profile && profile.learning) || "es"}.json`);   // Profe's map
-  placementTest = await loadJson(`profe/placement/${(profile && profile.learning) || "es"}.json`);
+  await loadCourse();   // Profe's map, the placement test and your cards
 
   setLanguages(profile);
   showName();
@@ -310,6 +316,42 @@ async function start() {
   } else {
     show("today");
   }
+}
+
+// Everything that depends on the language you learn and your level: Profe's map, the test, your cards.
+// Your cards: your own deck if you have one (from Anki, through Victoria's bridge), otherwise the starter decks.
+async function loadCourse() {
+  curriculum = await loadJson(`profe/curriculum/${learning()}.json`);
+  placementTest = await loadJson(`profe/placement/${learning()}.json`);
+  let deck = migrateCards((await loadJson("cards.json")) || loadSaved("cards") || []);
+  if (deck.length === 0) deck = await loadDecks();
+  if (deck.length === 0) deck = migrateCards((await loadJson("sample.json")) || []);
+  setCards(deck);
+}
+
+// The starter decks: decks/A1.json ... C1.json. One row = one idea in every language:
+//   { id, topic, es: "la casa", en: "house", uk: "дім", it: "casa", ru: "дом", ex_es: "…", ex_en: "…" }
+// A card = the word in the language you learn (term) + its example + its meaning in the other languages.
+// You get the decks from YOUR level up: if you start at B1, you don't get "hola".
+const DECK_LEVELS = ["A1", "A2", "B1", "B2", "C1"];
+
+async function loadDecks() {
+  const language = learning();
+  const level = map.start || (profile && profile.level);
+  const from = level === "C2" ? DECK_LEVELS.length - 1 : Math.max(0, DECK_LEVELS.indexOf(level));
+  const files = await Promise.all(DECK_LEVELS.slice(from).map(l => loadJson(`decks/${l}.json`)));
+  const deck = [];
+  for (const file of files) {
+    for (const row of (file && file.cards) || []) {
+      if (!row[language]) continue;   // no word in this language: skip the row
+      const card = { id: `${language}-${row.id}`, term: row[language], example: row["ex_" + language] || "", topic: row.topic, level: file.level };
+      for (const code of UI_LANGUAGES) {
+        if (code !== language && row[code]) card[code] = row[code];
+      }
+      deck.push(card);
+    }
+  }
+  return deck;
 }
 
 // ---------- 6. Today's queue ----------
@@ -383,7 +425,7 @@ function nextCard() {
 
   more.classList.add("hidden");
   current = queue[0];   // the first card in the queue
-  setText(question, current.es);   // no hint here: that would give away the answer!
+  setText(question, current.term);   // no hint here: that would give away the answer!
   setText(answer, meaning(current) + "\n" + current.example);
   answer.classList.add("hidden");
   tapHint.classList.remove("hidden");
@@ -475,7 +517,7 @@ let writingGrade = null;   // the result of "comprobar", saved when you tap "sig
 
 // Good for writing? (not grammar notes like "ir a + infinitivo" or long lists)
 function isWritable(c) {
-  return !/[:+…]/.test(c.es) && c.es.length <= 40;
+  return !/[:+…]/.test(c.term) && c.term.length <= 40;
 }
 
 // Today's writing: unlocked words that are due + a few newly unlocked ones
@@ -489,9 +531,10 @@ function writingForToday() {
 }
 
 // Helpers for checking: "¿Dónde?" → "dónde", "Árbol" → "arbol", "el bosque" → "bosque"
-function normalize(s) { return s.toLowerCase().replace(/[¡!¿?.,;]/g, "").replace(/\s+/g, " ").trim(); }
+function normalize(s) { return s.toLowerCase().replace(/[’‘]/g, "'").replace(/[¡!¿?.,;]/g, "").replace(/\s+/g, " ").trim(); }
 function stripAccents(s) { return s.normalize("NFD").replace(/[̀-ͯ]/g, ""); }
-function stripArticle(s) { return s.replace(/^(el|la|los|las|un|una) /, ""); }
+const ARTICLES = { es: /^(el|la|los|las|un|una) /, en: /^(the|a|an|to) / };   // small words in front, by language
+function stripArticle(s) { return ARTICLES[learning()] ? s.replace(ARTICLES[learning()], "") : s; }
 
 // How many letters are different between two words (0 = identical).
 // A famous algorithm called "Levenshtein distance": spell-checkers use it too.
@@ -513,7 +556,7 @@ function editDistance(a, b) {
 // key = which text to show ("grade.perfect" → "✓ ¡perfecto!")
 function gradeWriting(written, c) {
   const w = normalize(written);
-  const options = [normalize(c.es), ...c.es.split("/").map(normalize)];   // "sucio / sucia" → either one
+  const options = [normalize(c.term), ...c.term.split("/").map(normalize)];   // "sucio / sucia" → either one
   if (w === "") return { level: 0, key: "grade.empty" };
   if (options.includes(w)) return { level: 3, key: "grade.perfect" };
   if (options.some(o => stripAccents(o) === stripAccents(w))) return { level: 1, key: "grade.accents" };
@@ -566,7 +609,7 @@ function writingStep() {
     writingInput.readOnly = true;   // keep what you wrote visible, but locked
     setText(result, ...tr(grade.key));
     result.className = "result " + (grade.level === 3 ? "good" : grade.level === 1 ? "almost" : "bad");
-    setText(solution, currentWriting.es + "\n" + currentWriting.example);
+    setText(solution, currentWriting.term + "\n" + currentWriting.example);
     solution.classList.remove("hidden");
     countCorrect.classList.toggle("hidden", grade.level === 3);
     setText(writingAction, ...tr("writing.next"));
@@ -685,7 +728,7 @@ async function importFile() {
     }
     if (data.profeCards) {
       const known = new Set(profeCards.map(c => c.id));
-      const added = data.profeCards.filter(c => !known.has(c.id));
+      const added = migrateCards(data.profeCards).filter(c => !known.has(c.id));
       profeCards = [...profeCards, ...added];
       save("profeCards", profeCards);
       setCards(cards.filter(c => !isFromProfe(c)));
@@ -724,6 +767,7 @@ async function importFile() {
       profile = theirProfile;   // the profile travels with the backup (the newest one wins)
       save("profile", profile);
       setLanguages(profile);
+      await loadCourse();   // the profile may bring another language or level
       found.push(["settings.profile"]);
     }
     if (found.length === 0) throw new Error("not a mi-app file");
@@ -795,6 +839,13 @@ const TOPICS_EN = {
   "sobre mí": "about me", tiempo: "time", comida: "food", nuevas: "new words", "de Profe": "from Profe",
 };
 
+// A topic's name as [main, hint]. Starter-deck topics are translated (lang/*.json → "topic.food");
+// topics from your own cards are shown as they are.
+function topicName(topic) {
+  if (strings.en && strings.en["topic." + topic]) return tr("topic." + topic);
+  return [topic === "de Profe" ? t("topic.profe") : topic, contentHint(TOPICS_EN[topic])];
+}
+
 // Each card is "learned" (box 3+), "seen" or "new" (never seen)
 function stateOf(c) {
   const p = progress[c.id];
@@ -857,7 +908,7 @@ function drawProgress() {
     const learnedHere = list.filter(c => stateOf(c) === "learned").length;
     const row = make("div", "row");
     row.append(
-      make("span", "topic", topic === "de Profe" ? t("topic.profe") : topic, contentHint(TOPICS_EN[topic])),
+      make("span", "topic", ...topicName(topic)),
       bar(list),
       make("span", "count", `${learnedHere}/${list.length}`),
     );
@@ -876,7 +927,7 @@ function drawProgress() {
   const ul = make("ul", "weak");
   for (const c of weak) {
     const li = make("li");
-    li.append(make("span", "misses", `✗${progress[c.id].wrong}`), make("span", "word", c.es, meaning(c)));
+    li.append(make("span", "misses", `✗${progress[c.id].wrong}`), make("span", "word", c.term, meaning(c)));
     ul.append(li);
   }
   report.append(ul);
@@ -1261,12 +1312,18 @@ async function runInterview(savedAnswers) {
   // Done: save the profile on this device and open the app
   const before = profile || {};
   profile = { ...draft, notes: before.notes || [], created: before.created || day(), updated: new Date().toISOString() };
-  if (before.placement) {   // you already took the test: its result counts more than a guess
+  const sameLanguage = before.learning === profile.learning;
+  if (before.placement && sameLanguage) {   // you already took the test: its result counts more than a guess
     profile.placement = before.placement;
     profile.level = before.placement.level;
   }
+  if (before.learning && !sameLanguage) {   // another language = a new map, from the start
+    map = { done: {} };
+    save("map", map);
+  }
   save("profile", profile);
   setLanguages(profile);
+  await loadCourse();   // the map, the test and the cards for YOUR language and level
   showName();
   if (plan && plan.basic) plan = null;   // the simple plan will be made again, with your new name
   buildQueue();
@@ -1468,6 +1525,13 @@ function isRightAnswer(written, answers) {
   return answers.some(a => simple(a) === w || (w.length >= 8 && editDistance(simple(a), w) <= 1));
 }
 
+// The sentence to translate, in a language you know: your hint language, the one you chose at the start, your native one...
+function promptFor(item) {
+  const order = [speaking.hint, profile && profile.ui, profile && profile.native, "en", "es"];
+  const code = order.find(c => c && c !== learning() && item[c]);
+  return code ? item[code] : "";
+}
+
 // Show one question and WAIT for the answer. Gives back true (right) or false (wrong / "no lo sé").
 function askItem(item) {
   ptOptions.innerHTML = "";
@@ -1478,7 +1542,7 @@ function askItem(item) {
   return new Promise(answerWith => {
     if (item.type === "write") {
       // the sentence to translate, in your language · under it: "write it in Spanish", also in your language
-      setText(ptQuestion, pick(item, speaking.hint || "en"), own("writing.label", language => ({ in: phrase(language, "in." + learning()) })));
+      setText(ptQuestion, promptFor(item), own("writing.label", language => ({ in: phrase(language, "in." + learning()) })));
       ptCompose.classList.remove("hidden");
       ptInput.value = "";
       ptInput.focus();
@@ -1590,6 +1654,7 @@ async function startPlacement() {
   save("profile", profile);
   map.start = result.start;
   save("map", map);
+  await loadCourse();   // your cards now start at your real level
   showPlacementResult(result);
 }
 
@@ -1761,11 +1826,11 @@ function learnerContext() {
     lines.push("# The learner", "No profile yet: ask them a few questions first.");
   }
 
-  const learned = cards.filter(c => stateOf(c) === "learned").map(c => c.es);
-  const seen = cards.filter(c => stateOf(c) === "seen").map(c => c.es);
+  const learned = cards.filter(c => stateOf(c) === "learned").map(c => c.term);
+  const seen = cards.filter(c => stateOf(c) === "seen").map(c => c.term);
   const weak = cards.filter(c => progress[c.id] && progress[c.id].wrong > 0 && stateOf(c) !== "learned")
     .sort((x, y) => progress[y.id].wrong - progress[x.id].wrong).slice(0, 10)
-    .map(c => `${c.es} (✗${progress[c.id].wrong})`);
+    .map(c => `${c.term} (✗${progress[c.id].wrong})`);
   lines.push("", `# Learning snapshot (today is ${day()})`,
     `Cards: ${cards.length} · learned: ${learned.length} · seen, not learned yet: ${seen.length} · still to review today: ${leftToday()}`,
     `Learned words: ${learned.slice(0, 300).join(", ") || "none yet"}`,
@@ -1828,13 +1893,13 @@ function showMessage(message) {
 
   for (const [type, parts] of actions) {
     if (type === "card" && parts[0]) {
-      const [es, en = "", example = ""] = parts;
-      const have = cards.some(c => c.es.toLowerCase() === es.toLowerCase());
-      const button = make("button", "offer", have ? `✓ ${es}` : `+ ${es} · ${en}`);   // + = add to my cards
+      const [term, translation = "", example = ""] = parts;
+      const have = cards.some(c => c.term.toLowerCase() === term.toLowerCase());
+      const button = make("button", "offer", have ? `✓ ${term}` : `+ ${term} · ${translation}`);   // + = add to my cards
       button.disabled = have;
       button.onclick = () => {
-        addProfeCard(es, en, example);
-        setText(button, `✓ ${es}`);
+        addProfeCard(term, translation, example);
+        setText(button, `✓ ${term}`);
         button.disabled = true;
       };
       talkLog.append(button);
@@ -1856,8 +1921,9 @@ function showMessage(message) {
 }
 
 // A card Profe offered → your deck (it comes up in today's review)
-function addProfeCard(es, en, example) {
-  const card = { id: `p-${Date.now()}`, es, en, example, topic: "de Profe" };
+function addProfeCard(term, translation, example) {
+  const card = { id: `p-${Date.now()}`, term, example, topic: "de Profe" };
+  card[speaking.hint || "en"] = translation;   // Profe wrote the meaning in your hint language
   profeCards.push(card);
   save("profeCards", profeCards);
   cards.push(card);
