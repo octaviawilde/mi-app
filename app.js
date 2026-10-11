@@ -9,7 +9,7 @@
 // they're learning, small hint under it = their own language. That's content, not code.
 
 // ---------- 1. Settings (change these numbers whenever you like) ----------
-const VERSION = "1.21";                      // change it every time you publish
+const VERSION = "1.22";                      // change it every time you publish
 const NEW_PER_DAY = 15;                     // new cards per day (when the profile doesn't say)
 const BOX_DAYS = [0, 0, 1, 3, 7, 14];       // days before a card comes back, by box (1–5)
 const NEW_PER_MINUTES = { 5: 5, 15: 10, 30: 15, 60: 20 };   // minutes per day (profile) → new cards per day
@@ -1710,7 +1710,7 @@ async function startLesson(step) {
   // 1. the new sentences: read, listen, next
   for (const sentence of lesson.phrases) {
     nextScreen();
-    setText(ptQuestion, sentence.t, promptFor(sentence));
+    setText(ptQuestion, sentence.t, sentence.all || promptFor(sentence));   // all = the same for everyone (numbers)
     if (canSpeak()) {
       const listen = make("button", "", ...tr("pt.listen"));
       listen.onclick = () => speak(sentence.t);
