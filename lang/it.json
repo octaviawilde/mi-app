@@ -209,5 +209,6 @@
   "pt.gap": "scrivi la parola che manca",
   "pt.gapTap": "scegli la parola che manca",
   "task.freeLesson": "lezione con Profe",
-  "lesson.free": "Vorrei una lezione del mio livello."
+  "lesson.free": "Vorrei una lezione del mio livello.",
+  "ai.busy": "l'IA ({model}) è sovraccarica in questo momento. Aspetta un minuto e invia di nuovo, o scegli un altro modello in ⚙."
 }

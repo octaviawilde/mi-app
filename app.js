@@ -9,7 +9,7 @@
 // they're learning, small hint under it = their own language. That's content, not code.
 
 // ---------- 1. Settings (change these numbers whenever you like) ----------
-const VERSION = "1.18";                      // change it every time you publish
+const VERSION = "1.19";                      // change it every time you publish
 const NEW_PER_DAY = 15;                     // new cards per day (when the profile doesn't say)
 const BOX_DAYS = [0, 0, 1, 3, 7, 14];       // days before a card comes back, by box (1–5)
 const NEW_PER_MINUTES = { 5: 5, 15: 10, 30: 15, 60: 20 };   // minutes per day (profile) → new cards per day
@@ -1781,6 +1781,8 @@ function readableError(key, values) {
   return error;
 }
 
+const BUSY_CODES = [500, 502, 503, 529];   // "our computers are overloaded, try again"
+const BUSY_WAITS = [2000, 5000];           // wait 2 s, then 5 s, before giving up (3 tries in all)
 const TALK_MEMORY = 20;   // how many recent messages the AI sees (more = better memory, more cost)
 
 let ai = loadSaved("ai");            // { provider, key, model, url }
@@ -1839,17 +1841,25 @@ async function askAI(system, messages) {
     read = data => data.choices[0].message.content;
   }
 
+  // "Busy" answers (500, 502, 503, 529) mean the provider's computers are overloaded: nothing is wrong
+  // with your key or your message. They usually pass in seconds, so wait a little and ask again.
   let response;
-  try {
-    response = await fetch(url, { method: "POST", headers, body: JSON.stringify(body) });
-  } catch (error) {
-    throw readableError("ai.offline");
+  let data;
+  for (const wait of [...BUSY_WAITS, null]) {
+    try {
+      response = await fetch(url, { method: "POST", headers, body: JSON.stringify(body) });
+    } catch (error) {
+      throw readableError("ai.offline");
+    }
+    data = await response.json().catch(() => ({}));
+    if (!BUSY_CODES.includes(response.status) || wait === null) break;   // answered, or no tries left
+    await pause(wait);
   }
-  const data = await response.json().catch(() => ({}));
   if (!response.ok) {
     const detail = (data.error && (data.error.message || data.error)) || response.statusText;
     if (response.status === 401 || response.status === 403) throw readableError("ai.badKey", { detail });
     if (response.status === 429) throw readableError("ai.limit", { detail });
+    if (BUSY_CODES.includes(response.status)) throw readableError("ai.busy", { model });
     throw readableError("ai.error", { status: response.status, detail });
   }
   return read(data);

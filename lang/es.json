@@ -209,5 +209,6 @@
   "pt.gap": "escribe la palabra que falta",
   "pt.gapTap": "elige la palabra que falta",
   "task.freeLesson": "clase con Profe",
-  "lesson.free": "Quiero una clase de mi nivel."
+  "lesson.free": "Quiero una clase de mi nivel.",
+  "ai.busy": "la IA ({model}) está saturada ahora mismo. Espera un minuto y envía otra vez, o elige otro modelo en ⚙."
 }

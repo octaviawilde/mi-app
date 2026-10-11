@@ -209,5 +209,6 @@
   "pt.gap": "type the missing word",
   "pt.gapTap": "choose the missing word",
   "task.freeLesson": "lesson with Profe",
-  "lesson.free": "I'd like a lesson at my level."
+  "lesson.free": "I'd like a lesson at my level.",
+  "ai.busy": "the AI ({model}) is overloaded right now. Wait a minute and send again, or pick another model in ⚙."
 }
