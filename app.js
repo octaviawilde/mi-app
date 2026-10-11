@@ -9,7 +9,7 @@
 // they're learning, small hint under it = their own language. That's content, not code.
 
 // ---------- 1. Settings (change these numbers whenever you like) ----------
-const VERSION = "1.20";                      // change it every time you publish
+const VERSION = "1.21";                      // change it every time you publish
 const NEW_PER_DAY = 15;                     // new cards per day (when the profile doesn't say)
 const BOX_DAYS = [0, 0, 1, 3, 7, 14];       // days before a card comes back, by box (1–5)
 const NEW_PER_MINUTES = { 5: 5, 15: 10, 30: 15, 60: 20 };   // minutes per day (profile) → new cards per day
@@ -1312,7 +1312,9 @@ async function runInterview(savedAnswers) {
       continue;
     }
 
-    const value = await ask(step);
+    // only one language to learn (Spanish, for now)? Then there's nothing to ask
+    const onlyOne = step.options === "teachable" && optionsFor(step).length <= 1;
+    const value = onlyOne ? Object.keys(interview.languages).find(c => interview.languages[c].teach) : await ask(step);
     draft[step.saveAs] = value;
     if (step.id === "native") draft.languages[value] = "native";
     setLanguages(draft);   // Profe switches language as soon as you choose (your language, then the one you learn)
