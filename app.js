@@ -8,7 +8,7 @@
 // The text the learner SEES is Spanish (with small English hints): that's content, not code.
 
 // ---------- 1. Settings (change these numbers whenever you like) ----------
-const VERSION = "1.14";                      // change it every time you publish
+const VERSION = "1.15";                      // change it every time you publish
 const NEW_PER_DAY = 15;                     // new cards per day (when the profile doesn't say)
 const BOX_DAYS = [0, 0, 1, 3, 7, 14];       // days before a card comes back, by box (1–5)
 const NEW_PER_MINUTES = { 5: 5, 15: 10, 30: 15, 60: 20 };   // minutes per day (profile) → new cards per day
@@ -682,6 +682,7 @@ function show(name) {
   }
   // during the interview and the test, hide the menu and the status line (calm, one thing at a time)
   $(".menu").classList.toggle("hidden", name === "interview" || name === "placement");
+  navButtons.settings.classList.toggle("hidden", name === "interview" || name === "placement");   // no ⚙ either: it was a way to skip the interview
   statusLine.classList.toggle("hidden", ["interview", "placement", "profe", "settings"].includes(name));
   if (name === "progress") drawProgress();
   if (name === "today") drawToday();
