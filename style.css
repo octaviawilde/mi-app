@@ -667,3 +667,73 @@ button:active {
   flex-basis: 100%;
   margin: 0;
 }
+
+/* ---------- Add words ---------- */
+.add-form label {
+  display: block;
+  margin: 14px 0 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+/* the boxes sit close under their labels (the review box has more air around it) */
+.add-form .text-input {
+  margin-top: 4px;
+  padding-top: 6px;
+  font-size: 18px;
+  text-align: left;
+}
+
+.add-form .buttons {
+  margin-top: 18px;
+}
+
+/* your list: the word (and its meaning / note under it), its state, and "borrar" */
+.inbox {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.inbox li {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.inbox .word {
+  flex: 1;
+}
+
+.inbox .state {
+  flex: none;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.inbox .link {
+  flex: none;
+  padding: 0;
+  font-size: 12px;
+}
+
+.inbox .link[data-hint]::after {
+  display: none;   /* just "borrar": no hint on every row */
+}
+
+/* ---------- The report for Profe ---------- */
+.report-text {
+  box-sizing: border-box;
+  width: 100%;
+  margin: 12px 0 0;
+  padding: 10px;
+  font: inherit;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid var(--line);
+  resize: vertical;
+}

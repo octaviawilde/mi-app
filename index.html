@@ -16,162 +16,110 @@
   <meta name="theme-color" content="#070a08">
 </head>
 <body>
-  <!-- The text here is only a placeholder: app.js fills in every element that has data-t="key"
-       from lang/<code>.json (big = the language you learn, small hint under it = your language) -->
+  <!-- The text you see is Spanish; data-hint holds the small English hint shown under it -->
   <main>
     <div class="top">
-      <p class="prompt">&gt; <span data-t-main="hello">hola</span><span id="name"></span><span class="cursor">_</span></p>
+      <p class="prompt">&gt; hola<span id="name"></span><span class="cursor">_</span></p>
       <button id="nav-settings" class="gear" aria-label="settings">⚙&#xFE0E;</button>
     </div>
 
     <nav class="menu">
-      <button id="nav-today" class="active" data-t="nav.today">hoy</button>
-      <button id="nav-profe" data-t="nav.profe">profe</button>
-      <button id="nav-review" data-t="nav.review">repasar</button>
-      <button id="nav-progress" data-t="nav.progress">progreso</button>
+      <button id="nav-today" class="active" data-hint="today">hoy</button>
+      <button id="nav-review" data-hint="review">repasar</button>
+      <button id="nav-add" data-hint="add">añadir</button>
+      <button id="nav-progress" data-hint="progress">progreso</button>
     </nav>
 
     <p class="line" id="status">…</p>
 
+    <!-- Today: the plan from Profe -->
     <div id="screen-today">
       <p id="greeting" class="greeting"></p>
       <ul id="tasks" class="tasks"></ul>
       <p id="plan-note" class="line"></p>
     </div>
 
+    <!-- Review: flashcards, then writing -->
     <div id="screen-review" class="hidden">
       <section id="card" class="card">
         <p id="box" class="box"></p>
         <p id="question" class="question"></p>
         <p id="answer" class="answer hidden"></p>
-        <p id="tap-hint" class="tap-hint" data-t="review.tap">toca para girar</p>
+        <p id="tap-hint" class="tap-hint" data-hint="tap to see the answer">toca para girar</p>
       </section>
 
-      <!-- Writing: see the meaning, type the word (only for words you already recognise) -->
+      <!-- Writing: see the English, type the Spanish (only for words you already recognise) -->
       <section id="writing-card" class="card hidden">
         <p id="writing-box" class="box"></p>
-        <p id="writing-label" class="tap-hint writing-label"></p>
+        <p class="tap-hint writing-label" data-hint="write it in Spanish">escríbelo en español</p>
         <p id="writing-question" class="question"></p>
         <input id="writing-input" class="text-input" type="text" autocomplete="off" autocorrect="off"
                autocapitalize="off" spellcheck="false" enterkeyhint="done">
-        <p id="writing-tip" class="tap-hint tip" data-t="writing.tip">mantén pulsada una vocal para el acento</p>
+        <p class="tap-hint tip" data-hint="hold a vowel for its accent: á é í ó ú ñ">mantén pulsada una vocal para el acento</p>
         <p id="result" class="result hidden"></p>
         <p id="solution" class="answer hidden"></p>
       </section>
 
       <div id="writing-buttons" class="buttons hidden">
-        <button id="writing-action">comprobar</button>
+        <button id="writing-action" data-hint="check">comprobar</button>
       </div>
-      <button id="count-correct" class="link hidden" data-t="writing.count">✓ contar como bien</button>
+      <button id="count-correct" class="link hidden" data-hint="the app was too strict? count it as correct">✓ contar como bien</button>
 
       <!-- How do you feel about this word? 4 simple answers, from "no idea" to "easy" -->
       <div id="answers" class="answers hidden">
-        <button data-level="0" data-t="rate.0">no la sé</button>
-        <button data-level="1" data-t="rate.1">me suena</button>
-        <button data-level="2" data-t="rate.2">la sé</button>
-        <button data-level="3" data-t="rate.3">¡fácil!</button>
+        <button data-level="0" data-hint="I don't know it">no la sé</button>
+        <button data-level="1" data-hint="rings a bell">me suena</button>
+        <button data-level="2" data-hint="I know it">la sé</button>
+        <button data-level="3" data-hint="easy">¡fácil!</button>
       </div>
 
       <div id="more" class="buttons hidden">
-        <button id="more-new" data-t="more.new">[ + 5 nuevas ]</button>
-        <button id="free-practice" data-t="more.free">[ práctica libre ]</button>
+        <button id="more-new" data-hint="5 more new words">[ + 5 nuevas ]</button>
+        <button id="free-practice" data-hint="free practice">[ práctica libre ]</button>
       </div>
     </div>
 
-    <!-- ⚙ Settings: you and the app (not your learning, that's in "progreso") -->
-    <div id="screen-settings" class="hidden">
-      <!-- Your profile: what Profe knows about you -->
-      <h2 class="heading" data-t="settings.profile">tu ficha</h2>
-      <div id="profile" class="profile"></div>
-
-      <!-- Profe's AI: your provider + your own API key (it never leaves this device, except to that provider) -->
-      <h2 class="heading" data-t="settings.ai">la IA de Profe</h2>
-      <div id="ai-settings" class="ai-settings">
-        <label for="ai-provider" data-t="ai.provider">proveedor</label>
-        <select id="ai-provider" class="text-input"></select>
-        <label for="ai-key" data-t="ai.key">tu clave API</label>
-        <!-- type="text" (not "password"): so the iPhone doesn't fill in one of YOUR passwords here.
-             The dots come from CSS (.masked), and [ver] shows the key so you can check it. -->
-        <div class="key-row">
-          <input id="ai-key" class="text-input masked" type="text" name="api-key-not-a-password"
-                 autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
-                 data-1p-ignore data-lpignore="true">
-          <button id="ai-key-show" class="eye">[ver]</button>
-        </div>
-        <p id="ai-key-check" class="caption"></p>
-        <label for="ai-model" data-t="ai.model">modelo</label>
-        <select id="ai-model" class="text-input"></select>
-        <input id="ai-model-other" class="text-input hidden" type="text" data-t-placeholder="ai.modelName"
-               autocomplete="off" autocapitalize="off" spellcheck="false">
-        <button id="ai-find-models" class="link" data-t="ai.find">↻ ver mis modelos</button>
-        <div id="ai-url-row" class="hidden">
-          <label for="ai-url" data-t="ai.url">dirección (URL)</label>
-          <input id="ai-url" class="text-input" type="url" placeholder="https://…/v1" autocapitalize="off">
-        </div>
-        <p id="ai-status" class="caption"></p>
+    <!-- Add: words and sentences you meet in real life -->
+    <div id="screen-add" class="hidden">
+      <div class="add-form">
+        <label for="add-es" data-hint="a word or a sentence, in Spanish">palabra o frase</label>
+        <input id="add-es" class="text-input" type="text" autocomplete="off" autocorrect="off"
+               autocapitalize="off" spellcheck="false" enterkeyhint="next">
+        <label for="add-en" data-hint="what it means, if you know (then it becomes a card now)">significado, si lo sabes</label>
+        <input id="add-en" class="text-input" type="text" autocomplete="off" enterkeyhint="next">
+        <label for="add-note" data-hint="a note: where you heard it, who said it">nota</label>
+        <input id="add-note" class="text-input" type="text" autocomplete="off" enterkeyhint="done">
         <div class="buttons">
-          <button id="ai-save" data-t="ai.save">guardar y probar</button>
-          <button id="ai-forget" data-t="ai.forget">borrar</button>
+          <button id="add-save" data-hint="save">guardar</button>
         </div>
-        <p class="caption" data-t="ai.private">tu clave solo vive en este teléfono</p>
       </div>
+      <h2 class="heading" data-hint="your words: → Profe = waiting for your next report">tus palabras</h2>
+      <ul id="inbox" class="inbox"></ul>
+    </div>
 
-      <!-- Your data: things you need only sometimes, so they live here, out of the way -->
-      <h2 class="heading" data-t="settings.data">tus datos</h2>
+    <!-- Progress: your numbers, and the report for Profe -->
+    <div id="screen-progress" class="hidden">
+      <div class="buttons">
+        <button id="report-send" data-hint="send Profe what you did: share it or paste it in your chat">→ informe para Profe</button>
+      </div>
+      <textarea id="report-text" class="report-text hidden" readonly rows="12"></textarea>
+      <div id="report" class="report"></div>
+    </div>
+
+    <!-- ⚙ Settings: things you need only sometimes -->
+    <div id="screen-settings" class="hidden">
+      <h2 class="heading" data-hint="your data">tus datos</h2>
+      <p class="caption" data-hint="export: a backup + your report (save it in iCloud Drive → mi-app and Profe finds it) · import: your cards and today's plan from Profe">exportar para guardar · importar lo de Profe</p>
       <footer class="data-tools">
-        <button id="export" data-t="data.export">[ exportar ]</button>
-        <label for="file" data-t="data.import">[ importar ]</label>
+        <button id="export" data-hint="save a backup">[ exportar ]</button>
+        <label for="file" data-hint="load a file">[ importar ]</label>
         <input type="file" id="file" accept=".json,application/json" class="hidden">
       </footer>
 
       <p class="version">
-        <button id="update" data-t="update">↻ actualizar</button>
+        <button id="update" data-hint="check for updates">↻ actualizar</button>
         <span id="version"></span>
       </p>
-    </div>
-
-    <!-- Profe's chat with AI: send a sentence from your life, ask anything -->
-    <div id="screen-profe" class="hidden">
-      <div id="talk" class="chat"></div>
-      <div class="chat-compose">
-        <input id="talk-input" class="text-input" type="text" autocomplete="off" autocorrect="off"
-               spellcheck="false" enterkeyhint="send" data-t-placeholder="talk.placeholder">
-        <button id="talk-send" data-t-hint="send">→</button>
-      </div>
-      <button id="talk-new" class="link" data-t="talk.new">↺ nueva conversación</button>
-    </div>
-
-    <!-- The placement test: one question at a time -->
-    <div id="screen-placement" class="hidden">
-      <p id="pt-progress" class="line"></p>
-      <p id="pt-text" class="pt-text hidden"></p>
-      <p id="pt-question" class="question"></p>
-      <div id="pt-compose" class="chat-compose hidden">
-        <input id="pt-input" class="text-input" type="text" autocomplete="off" autocorrect="off"
-               autocapitalize="off" spellcheck="false" enterkeyhint="send">
-        <button id="pt-send" data-t-hint="send">→</button>
-      </div>
-      <div id="pt-options" class="choices"></div>
-    </div>
-
-    <!-- The first meeting with Profe: the interview -->
-    <div id="screen-interview" class="hidden">
-      <div id="chat" class="chat"></div>
-      <div id="chat-compose" class="chat-compose hidden">
-        <input id="chat-input" class="text-input" type="text" autocomplete="off" autocorrect="off"
-               spellcheck="false" enterkeyhint="send">
-        <button id="chat-send" data-t-hint="send">→</button>
-      </div>
-      <div id="choices" class="choices"></div>
-    </div>
-
-    <div id="screen-progress" class="hidden">
-      <div id="report" class="report"></div>
-
-      <!-- Your map: where you are on the CEFR levels (A1 → C2) -->
-      <h2 id="map-heading" class="heading" data-t="progress.map">tu mapa</h2>
-      <div id="map" class="map"></div>
-
     </div>
   </main>
   <script src="app.js"></script>
