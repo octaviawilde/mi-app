@@ -737,3 +737,18 @@ button:active {
   border: 1px solid var(--line);
   resize: vertical;
 }
+
+/* ---------- Look up: what the search finds in your cards ---------- */
+.found {
+  margin-top: 16px;
+}
+
+.found-line {
+  margin: 0 0 8px;
+  padding-left: 12px;
+  border-left: 1px solid var(--accent);
+}
+
+button:disabled {
+  opacity: 0.35;
+}

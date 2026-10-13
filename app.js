@@ -10,7 +10,7 @@
 // The code is in English. The text you SEE is Spanish, with a small English hint under it.
 
 // ---------- 1. Settings (change these numbers whenever you like) ----------
-const VERSION = "2.0";                      // change it every time you publish
+const VERSION = "2.1";                      // change it every time you publish
 const NEW_PER_DAY = 10;                     // new cards per day
 const BOX_DAYS = [0, 0, 1, 3, 7, 14];       // days before a card comes back, by box (1–5)
 const WRITING_FROM_BOX = 3;                 // a word unlocks writing when its card reaches box 3
@@ -595,6 +595,7 @@ async function importFile() {
     if (newCards) {
       const deck = migrateCards(newCards);
       save("cards", deck);
+      save("deckDate", data.date || day());   // when Profe made this deck (shown in ⚙)
       setCards(deck);   // your own words stay
       found.push(`${deck.length} tarjetas`);
     }
@@ -674,6 +675,15 @@ function show(name) {
   if (name === "progress") drawProgress();
   if (name === "today") drawToday();
   if (name === "add") drawInbox();
+  if (name === "settings") drawDeckInfo();
+}
+
+// ⚙: how many cards you have and from which day, so you can compare with Anki
+function drawDeckInfo() {
+  const own = cards.filter(isMine).length;
+  const date = loadSaved("deckDate");
+  setText($("#deck-info"), `${cards.length - own} tarjetas de Profe${date ? " · del " + date : ""} · ${own} tuyas`,
+    "cards from Profe (your Anki deck), from that day · your own");
 }
 
 for (const name in navButtons) navButtons[name].addEventListener("click", () => show(name));
@@ -838,9 +848,51 @@ const addEn = $("#add-en");
 const addNote = $("#add-note");
 const inboxList = $("#inbox");
 
+// ---- Look it up first: do I already have this word? ----
+// While you type in "palabra" or "significado", the app searches ALL your cards (your deck + your own words)
+// and shows what it finds under the form. So the same boxes work as a small dictionary of what you have:
+// type the Spanish to see the meaning, or type the meaning to find the Spanish.
+// If the word is already there, you can't add it twice.
+const foundBox = $("#found");
+
+// "El Perro", "perro", "pérro" → "perro": so small differences don't hide a word you already have
+function simple(text) {
+  return stripArticle(stripAccents(normalize(text)));
+}
+
+// Everything you have: your cards, and your own words that still wait for a meaning
+function everything() {
+  const waiting = inbox.filter(item => !item.en).map(item => ({ es: item.es, en: "→ Profe" }));
+  return [...cards, ...waiting];
+}
+
+// Is this exact word already in your cards? ("sucio / sucia" counts for "sucio" and for "sucia")
+function alreadyHave(text) {
+  const word = simple(text);
+  if (!word) return false;
+  return everything().some(c => [c.es, ...c.es.split("/")].some(part => simple(part) === word));
+}
+
+function lookUp() {
+  const es = simple(addEs.value);
+  const en = normalize(addEn.value);
+  foundBox.innerHTML = "";
+  const duplicate = alreadyHave(addEs.value);
+  $("#add-save").disabled = duplicate;
+  if (es.length < 2 && en.length < 2) return;   // too short to search
+  const matches = everything().filter(c =>
+    (es.length >= 2 && simple(c.es).includes(es)) || (en.length >= 2 && normalize(c.en).includes(en)));
+  if (duplicate) foundBox.append(make("p", "caption warning", "ya la tienes: no hace falta añadirla", "you already have it: no need to add it"));
+  else if (matches.length === 0) foundBox.append(make("p", "caption", "no la tienes: es nueva", "you don't have it: it's new"));
+  else foundBox.append(make("p", "caption", "en tus tarjetas:", "in your cards:"));
+  for (const c of matches.slice(0, 8)) foundBox.append(make("p", "found-line", c.es, c.en));
+  if (matches.length > 8) foundBox.append(make("p", "caption", `… y ${matches.length - 8} más`, "and more: type more letters"));
+}
+
 function addWord() {
   const es = addEs.value.trim();
   if (!es) return;   // nothing written: nothing to save
+  if (alreadyHave(es)) return;   // you already have it
   inbox.unshift({ id: `m-${Date.now()}`, es, en: addEn.value.trim(), note: addNote.value.trim(), date: day(), sent: null });
   save("inbox", inbox);
   addEs.value = addEn.value = addNote.value = "";
@@ -848,6 +900,7 @@ function addWord() {
   buildQueue();
   nextCard();
   drawInbox();
+  lookUp();
   addEs.focus();
 }
 
@@ -879,6 +932,8 @@ function drawInbox() {
 }
 
 $("#add-save").addEventListener("click", addWord);
+addEs.addEventListener("input", lookUp);
+addEn.addEventListener("input", lookUp);
 for (const box of [addEs, addEn, addNote]) {
   box.addEventListener("keydown", event => { if (event.key === "Enter") addWord(); });
 }

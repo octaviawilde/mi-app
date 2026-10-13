@@ -82,10 +82,10 @@
     <!-- Add: words and sentences you meet in real life -->
     <div id="screen-add" class="hidden">
       <div class="add-form">
-        <label for="add-es" data-hint="a word or a sentence, in Spanish">palabra o frase</label>
+        <label for="add-es" data-hint="a word or a sentence, in Spanish (type to search your cards)">palabra o frase</label>
         <input id="add-es" class="text-input" type="text" autocomplete="off" autocorrect="off"
                autocapitalize="off" spellcheck="false" enterkeyhint="next">
-        <label for="add-en" data-hint="what it means, if you know (then it becomes a card now)">significado, si lo sabes</label>
+        <label for="add-en" data-hint="what it means, if you know (or type a meaning to find the word)">significado, si lo sabes</label>
         <input id="add-en" class="text-input" type="text" autocomplete="off" enterkeyhint="next">
         <label for="add-note" data-hint="a note: where you heard it, who said it">nota</label>
         <input id="add-note" class="text-input" type="text" autocomplete="off" enterkeyhint="done">
@@ -93,6 +93,8 @@
           <button id="add-save" data-hint="save">guardar</button>
         </div>
       </div>
+      <!-- what the search finds in your cards while you type -->
+      <div id="found" class="found"></div>
       <h2 class="heading" data-hint="your words: → Profe = waiting for your next report">tus palabras</h2>
       <ul id="inbox" class="inbox"></ul>
     </div>
@@ -110,6 +112,7 @@
     <div id="screen-settings" class="hidden">
       <h2 class="heading" data-hint="your data">tus datos</h2>
       <p class="caption" data-hint="export: a backup + your report (save it in iCloud Drive → mi-app and Profe finds it) · import: your cards and today's plan from Profe">exportar para guardar · importar lo de Profe</p>
+      <p id="deck-info" class="caption"></p>
       <footer class="data-tools">
         <button id="export" data-hint="save a backup">[ exportar ]</button>
         <label for="file" data-hint="load a file">[ importar ]</label>
